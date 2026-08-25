@@ -7,6 +7,7 @@ import jse.code.LibVer;
 import jse.code.OS;
 import jse.code.UT;
 import jse.code.collection.DoubleList;
+import jse.code.timer.AccumulatedTimer;
 import jse.cptr.*;
 import jse.gpu.*;
 import jse.jit.IJITEngine;
@@ -190,7 +191,7 @@ public class NEP extends AbstractPairPotential {
         int inum = aPair.listInum();
         IntCPointer ilist = aPair.listIlist();
         IntCPointer numneigh = aPair.listNumneigh();
-        mStatNeiNumLammps.invoke(ilist, numneigh, inum, mOutNums);
+        mStatNlSizeLammps.invoke(ilist, numneigh, inum, mOutNums);
         validNlLammps_(mOutNums.getAt(0));
         
         mPtrMng.ensureCapacity(Fp, annmb.dim);
@@ -199,7 +200,7 @@ public class NEP extends AbstractPairPotential {
         mComputeLammps.invoke(
             inum, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, aPair.cvflagAtom()?1:0,
             aPair.atomX(), aPair.atomF(), aPair.atomType(),
-            ilist, numneigh, aPair.listFirstneigh(), aPair.mCutoffsq, aPair.mTypeMap,
+            ilist, numneigh, aPair.listFirstneigh(), aPair.mTypeMap,
             aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
             mCNlDx, mCNlDy, mCNlDz, mCNlType, mCNlIdx,
             paramb.atomic_numbers, paramb.q_scaler,
@@ -210,11 +211,37 @@ public class NEP extends AbstractPairPotential {
         );
     }
     
-    
-    private boolean mCudaParaInited = false;
-    private void initLmpParamCuda_(PairNEP aPair) throws CudaException {
-        if (mCudaParaInited) return;
-        mCudaParaInited = true;
+    // cuda stuff
+    private final AccumulatedTimer mCudaCopyTimer = new AccumulatedTimer(), mCudaComputeTimer = new AccumulatedTimer();
+    public double cudaNlTime() {
+        return mCudaNlGetter.nlTime() + mCudaNlGetter.cellTime();
+    }
+    public double cudaCopyTime() {
+        return mCudaCopyTimer.get() + mCudaNlGetter.copyTime();
+    }
+    public double cudaComputeTime() {
+        return mCudaComputeTimer.get();
+    }
+    public void resetCudaTimer() {
+        mCudaCopyTimer.reset();
+        mCudaComputeTimer.reset();
+        mCudaNlGetter.resetTimer();
+    }
+    private boolean mCudaLmpInited = false;
+    private void initLmpDataCuda_(PairNEP aPair) throws CudaException {
+        if (mCudaLmpInited) return;
+        mCudaLmpInited = true;
+        
+        mFltBuf = mPtrMng.newFloatCPointer();
+        mCudaF = mPtrMng.newFloatCudaPointer();
+        mCudaEatom0 = mPtrMng.newFloatCudaPointer();
+        mCudaVatom0 = mPtrMng.newFloatCudaPointer();
+        mCudaVatom1 = mPtrMng.newFloatCudaPointer();
+        mCudaGNlFx = mPtrMng.newFloatCudaPointer();
+        mCudaGNlFy = mPtrMng.newFloatCudaPointer();
+        mCudaGNlFz = mPtrMng.newFloatCudaPointer();
+        
+        mCudaNlGetter = new CudaNeighborListGetter(rcutMax());
         mCudaTypeMap = mPtrMng.newIntCudaPointer(aPair.mTypeNum+1);
         mCudaTypeMap.fill(aPair.mTypeMap, aPair.mTypeNum+1);
     }
@@ -222,88 +249,55 @@ public class NEP extends AbstractPairPotential {
         if (isClosed()) throw new IllegalStateException("This NEP is dead");
         if (!mInited) throw new IllegalStateException();
         if (!mCuda) throw new IllegalStateException();
-        initLmpParamCuda_(aPair);
+        initLmpDataCuda_(aPair);
         // 常规缓存向量长度规范
-        final boolean nlflag = mNumneighMax<0 || aPair.neighborAgo()==0;
-        final boolean cvflagAtom = aPair.cvflagAtom();
-        final int inum = aPair.listInum();
         final int nlocal = aPair.atomNlocal();
         final int nghost = aPair.atomNghost();
         final int nlocalghost = nlocal + nghost;
-        mPtrMng.ensureCapacity(mFltBuf, (long)nlocalghost*9);
-        mPtrMng.ensureCapacity(mCudaX, (long)nlocalghost*3);
-        mPtrMng.ensureCapacity(mCudaF, (long)nlocalghost*3);
-        mPtrMng.ensureCapacity(mCudaEatom0, (long)inum);
-        mPtrMng.ensureCapacity(mCudaVatom0, (long)inum*6);
-        mPtrMng.ensureCapacity(mCudaVatom1, (long)nlocalghost*(cvflagAtom?9:6));
-        mPtrMng.ensureCapacity(mCudaType, nlocalghost);
-        if (nlflag) {
-            mPtrMng.ensureCapacity(mCudaIlist, inum);
-            mPtrMng.ensureCapacity(mCudaNumneigh, inum);
-        }
-        mPtrMng.ensureCapacity(mCudaGNeiNum, inum);
-        mPtrMng.ensureCapacity(mCudaGCType, inum);
-        mPtrMng.ensureCapacity(cuda_Fp, (long)inum*annmb.dim);
-        mPtrMng.ensureCapacity(cuda_sum_fxyz, (long)inum*(paramb.n_max_angular+1)*NUM_OF_ABC);
-        // 近邻列表大小获取和缓存合理化
-        IPointer ilist = NULL;
-        IPointer numneigh = NULL;
-        IPointer firstneigh = NULL;
-        if (nlflag) {
-            ilist = aPair.listIlist();
-            numneigh = aPair.listNumneigh();
-            firstneigh = aPair.listFirstneigh();
-            mStatNeiNumLammps.invoke(ilist, numneigh, inum, mOutNums);
-            mNumneighMax = mOutNums.getAt(0);
-        }
+        mPtrMng.ensureCapacity(mFltBuf, (long)nlocalghost*9L);
+        mPtrMng.ensureCapacity(mCudaF, (long)nlocalghost*3L);
+        mPtrMng.ensureCapacity(mCudaEatom0, (long)nlocal);
+        mPtrMng.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
+        mPtrMng.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
+        mPtrMng.ensureCapacity(cuda_Fp, (long)nlocal*annmb.dim);
+        mPtrMng.ensureCapacity(cuda_sum_fxyz, (long)nlocal*(paramb.n_max_angular+1)*NUM_OF_ABC);
+        // GPU 近邻列表构建
+        mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
-        if (nlflag) {
-            int tTotNeiNum = inum*mNumneighMax;
-            mPtrMng.ensureCapacity(mIntBuf, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaFirstneigh, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlType, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlIdx, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlDx, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlDy, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlDz, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlFx, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlFy, tTotNeiNum);
-            mPtrMng.ensureCapacity(mCudaGNlFz, tTotNeiNum);
-        }
-        
-        // lammps -> cuda
-        int tCode = mLammps2Cuda.invoke(
-            inum, nlocalghost, nlflag?1:0, mNumneighMax,
-            aPair.atomX(), aPair.atomType(),
-            ilist, numneigh, firstneigh,
-            mFltBuf, mIntBuf,
-            mCudaX, mCudaType,
-            nlflag?mCudaIlist:NULL, nlflag?mCudaNumneigh:NULL, nlflag?mCudaFirstneigh:NULL
-        );
-        CudaCore.cudaExceptionCheck(tCode);
+        final int tTotNlSize = nlocal*mCudaNlGetter.nlMax();
+        mPtrMng.ensureCapacity(mCudaGNlFx, tTotNlSize);
+        mPtrMng.ensureCapacity(mCudaGNlFy, tTotNlSize);
+        mPtrMng.ensureCapacity(mCudaGNlFz, tTotNlSize);
         
         // cuda compute
-        tCode = mComputeLammpsCuda.invoke(
-            inum, nlocalghost, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, cvflagAtom?1:0,
-            mCudaX, mCudaType, mCudaIlist, mCudaNumneigh, mCudaFirstneigh, aPair.mCutoffsq, mCudaTypeMap,
+        mCudaComputeTimer.from();
+        final boolean eflagEither = aPair.eflagEither();
+        final boolean vflagEither = aPair.vflagEither();
+        final boolean vflagAtom = aPair.vflagAtom();
+        final boolean cvflagAtom = aPair.cvflagAtom();
+        int tCode = mComputeLammpsCuda.invoke(
+            nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
+            mCudaNlGetter.posX(), mCudaNlGetter.posY(), mCudaNlGetter.posZ(), mCudaNlGetter.type(),
+            mCudaNlGetter.nlSize(), mCudaNlGetter.nlIdx(), mCudaTypeMap,
             paramb.cuda_atomic_numbers, paramb.cuda_q_scaler,
             annmb.cuda_w0, annmb.cuda_b0, annmb.cuda_w1, annmb.cuda_b1, annmb.cuda_c,
             zbl.cuda_para, cuda_gn_radial, cuda_gn_angular, cuda_gnp_radial, cuda_gnp_angular,
             mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1,
-            mCudaGNlDx, mCudaGNlDy, mCudaGNlDz, mCudaGNlType, mCudaGNlIdx, mCudaGNeiNum, mCudaGCType,
             mCudaGNlFx, mCudaGNlFy, mCudaGNlFz,
             cuda_Fp, cuda_sum_fxyz
         );
         CudaCore.cudaExceptionCheck(tCode);
+        mCudaComputeTimer.to();
         
         // cuda -> lammps
+        mCudaCopyTimer.from();
         tCode = mCuda2Lammps.invoke(
-            inum, nlocalghost, aPair.eflagEither()?1:0, aPair.vflagEither()?1:0, aPair.eflagAtom()?1:0, aPair.vflagAtom()?1:0, cvflagAtom?1:0,
+            nlocal, nghost, eflagEither?1:0, aPair.eflagAtom()?1:0, vflagEither?1:0, vflagAtom?1:0, cvflagAtom?1:0,
             aPair.atomF(), aPair.engVdwl(), aPair.eatom(), aPair.virial(), aPair.vatom(), aPair.cvatom(),
-            mFltBuf, ilist,
-            mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
+            mFltBuf, mCudaF, mCudaEatom0, mCudaVatom0, mCudaVatom1
         );
         CudaCore.cudaExceptionCheck(tCode);
+        mCudaCopyTimer.to();
     }
     
     
@@ -512,24 +506,19 @@ public class NEP extends AbstractPairPotential {
     IntCPointer mCNlType = null, mCNlIdx = null;
     
     /// gpu stuffs
-    // cpu 数据
-    private int mNumneighMax = -1;
     private FloatCPointer mFltBuf = null;
-    private IntCPointer mIntBuf = null;
-    // cuda 数据
-    private FloatCudaPointer mCudaX = null, mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
-    private IntCudaPointer mCudaType = null, mCudaIlist = null, mCudaNumneigh = null, mCudaGNeiNum = null, mCudaGCType = null;
-    private IntCudaPointer mCudaFirstneigh = null, mCudaGNlType = null, mCudaGNlIdx = null;
-    private FloatCudaPointer mCudaGNlDx = null, mCudaGNlDy = null, mCudaGNlDz = null, mCudaGNlFx = null, mCudaGNlFy = null, mCudaGNlFz = null;
+    private FloatCudaPointer mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
+    private FloatCudaPointer mCudaGNlFx = null, mCudaGNlFy = null, mCudaGNlFz = null;
     private IntCudaPointer mCudaTypeMap = null;
     private FloatCudaPointer cuda_Fp = null, cuda_sum_fxyz = null;
+    private CudaNeighborListGetter mCudaNlGetter = null;
     
     /// jit stuffs
     IJITEngine mJITEngine = null;
     private IJITMethod mCalEnergy = null, mCalEnergyForce = null;
     private IJITMethod mConstructTable = null;
-    private IJITMethod mStatNeiNumLammps = null, mComputeLammps = null;
-    private IJITMethod mLammps2Cuda = null, mCuda2Lammps = null, mComputeLammpsCuda = null;
+    private IJITMethod mStatNlSizeLammps = null, mComputeLammps = null;
+    private IJITMethod mCuda2Lammps = null, mComputeLammpsCuda = null;
     private String mLibDir = OS.WORKING_DIR, mProjectName = JIT_NAME;
     
     private final static Pattern PROJECT_INVALID_NAME = Pattern.compile("[^a-zA-Z0-9_\\-]");
@@ -545,6 +534,8 @@ public class NEP extends AbstractPairPotential {
         if (isClosed()) return;
         super.close();
         mPtrMng.close();
+        if (mJITEngine!=null) mJITEngine.close();
+        if (mCudaNlGetter!=null) mCudaNlGetter.close();
     }
     
     void compileJIT() throws Exception {
@@ -574,7 +565,6 @@ public class NEP extends AbstractPairPotential {
                     return wd;
                 });
             mJITEngine.compile();
-            mLammps2Cuda = mJITEngine.findMethod("jse_nep_lammps2cuda");
             mCuda2Lammps = mJITEngine.findMethod("jse_nep_cuda2lammps");
             mComputeLammpsCuda = mJITEngine.findMethod("jse_nep_computeLammpsCuda");
         } else {
@@ -593,12 +583,12 @@ public class NEP extends AbstractPairPotential {
                     return wd;
                 });
             mJITEngine.compile();
+            mStatNlSizeLammps = mJITEngine.findMethod("jse_nep_statNlSizeLammps");
             mCalEnergy = mJITEngine.findMethod("jse_nep_calEnergy");
             mCalEnergyForce = mJITEngine.findMethod("jse_nep_calEnergyForce");
             mComputeLammps = mJITEngine.findMethod("jse_nep_computeLammps");
         }
         mConstructTable = mJITEngine.findMethod("jse_nep_constructTable");
-        mStatNeiNumLammps = mJITEngine.findMethod("jse_nep_statNeiNumLammps");
     }
     private Map<String, Object> initGenMap_() {
         Map<String, Object> rGenMap = new LinkedHashMap<>();
@@ -990,23 +980,10 @@ public class NEP extends AbstractPairPotential {
             cuda_gnp_angular = mPtrMng.newFloatCudaPointer();
             
             mFltBuf = mPtrMng.newFloatCPointer();
-            mIntBuf = mPtrMng.newIntCPointer();
-            mCudaX = mPtrMng.newFloatCudaPointer();
             mCudaF = mPtrMng.newFloatCudaPointer();
             mCudaEatom0 = mPtrMng.newFloatCudaPointer();
             mCudaVatom0 = mPtrMng.newFloatCudaPointer();
             mCudaVatom1 = mPtrMng.newFloatCudaPointer();
-            mCudaType = mPtrMng.newIntCudaPointer();
-            mCudaIlist = mPtrMng.newIntCudaPointer();
-            mCudaNumneigh = mPtrMng.newIntCudaPointer();
-            mCudaGNeiNum = mPtrMng.newIntCudaPointer();
-            mCudaGCType = mPtrMng.newIntCudaPointer();
-            mCudaFirstneigh = mPtrMng.newIntCudaPointer();
-            mCudaGNlType = mPtrMng.newIntCudaPointer();
-            mCudaGNlIdx = mPtrMng.newIntCudaPointer();
-            mCudaGNlDx = mPtrMng.newFloatCudaPointer();
-            mCudaGNlDy = mPtrMng.newFloatCudaPointer();
-            mCudaGNlDz = mPtrMng.newFloatCudaPointer();
             mCudaGNlFx = mPtrMng.newFloatCudaPointer();
             mCudaGNlFy = mPtrMng.newFloatCudaPointer();
             mCudaGNlFz = mPtrMng.newFloatCudaPointer();

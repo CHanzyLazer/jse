@@ -1,6 +1,11 @@
 package jsex.nep;
 
+import jse.code.OS;
+import jse.gpu.CudaCore;
 import jse.gpu.CudaJIT;
+import jse.gpu.CudaNeighborListGetter;
+
+import static jse.code.Conf.DEBUG;
 
 /**
  * {@link PairNEP} 的 GPU 版本，在 lammps
@@ -25,19 +30,60 @@ public class PairNEP_gpu extends PairNEP {
     private final static boolean _INIT_FLAG;
     static {
         PairNEP_gpu.InitHelper.INITIALIZED = true;
-        // 现在只需要 jit 初始化即可
+        // 需要 cuda jit 和 cuda nl
         CudaJIT.InitHelper.init();
+        CudaNeighborListGetter.InitHelper.init();
         _INIT_FLAG = false;
+    }
+    
+    public final static class Conf {
+        /**
+         * 自定义 NEP LAMMPS GPU 版本会使用的设备编号
+         * <p>
+         * 也可使用环境变量 {@code JSE_PAIR_NEP_GPU_DEVICE} 来设置
+         */
+        public static int DEVICE = OS.envI("JSE_PAIR_NEP_GPU_DEVICE", -1);
     }
     
     protected PairNEP_gpu(long aPairPtr) {
         super(aPairPtr);
     }
+    @SuppressWarnings("JavaPrintToLogpoint")
+    @Override public void settings(String... aArgs) throws Exception {
+        super.settings(aArgs);
+        int tMe = commMe();
+        CudaCore.assignDevice(tMe, Conf.DEVICE);
+        if (DEBUG) {
+            if (tMe==0) System.out.println("========NEP GPU DEVICE========");
+            commBarrier();
+            System.out.println("rank: "+tMe+", device: "+ CudaCore.cudaGetDevice());
+            commBarrier();
+            if (tMe==0) System.out.println("==============================");
+        }
+    }
     
+    @Override public void initStyle() {
+        if (!forceNewtonPair()) {
+            throw new IllegalArgumentException("Pair style NEP requires newton pair on");
+        }
+        // gpu 总是手动构造近邻列表
+    }
     @Override public void compute() throws Exception {
         mNEP.computeLammpsCuda(this);
     }
     @Override protected void initNEP(String aPath) throws Exception {
         mNEP.init_from_file(aPath, "cuda");
+    }
+    
+    @SuppressWarnings("JavaPrintToLogpoint")
+    @Override public void close() throws Exception {
+        if (DEBUG && commMe()==0) {
+            System.out.println("=========NEP GPU TIME=========");
+            System.out.printf("copy    time: %.4g s\n", mNEP.cudaCopyTime());
+            System.out.printf("compute time: %.4g s\n", mNEP.cudaComputeTime());
+            System.out.printf("nl      time: %.4g s\n", mNEP.cudaNlTime());
+            System.out.println("==============================");
+        }
+        super.close();
     }
 }

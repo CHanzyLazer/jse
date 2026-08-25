@@ -1,6 +1,5 @@
 package jsex.nep;
 
-import jse.cptr.DoubleCPointer;
 import jse.cptr.IntCPointer;
 import jse.jit.SimpleJIT;
 import jse.lmp.LmpPlugin;
@@ -92,14 +91,12 @@ public class PairNEP extends LmpPlugin.Pair {
         }
         // get cutoff from NEP model
         mCutoff = mNEP.rcutMax();
-        mCutoffsq = mCutoff * mCutoff;
     }
     protected void initNEP(String aPath) throws Exception {
         mNEP.init_from_file(aPath, "cpu");
     }
     
     protected double mCutoff = Double.NaN;
-    protected double mCutoffsq = Double.NaN;
     protected int mTypeNum = -1;
     protected NEP mNEP = new NEP();
     protected IntCPointer mTypeMap = null;

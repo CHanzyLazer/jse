@@ -1,9 +1,7 @@
 package jsex.nnap;
 
-
 import jse.code.OS;
 import jse.gpu.CudaCore;
-import jse.gpu.CudaException;
 import jse.gpu.CudaJIT;
 import jse.gpu.CudaNeighborListGetter;
 
@@ -53,43 +51,15 @@ public class PairNNAP_gpu extends PairNNAP {
     @SuppressWarnings("JavaPrintToLogpoint")
     @Override public void settings(String... aArgs) throws Exception {
         super.settings(aArgs);
-        assignGpu();
+        int tMe = commMe();
+        CudaCore.assignDevice(tMe, Conf.DEVICE);
         if (DEBUG) {
-            int tMe = commMe();
             if (tMe==0) System.out.println("========NNAP GPU DEVICE========");
             commBarrier();
             System.out.println("rank: "+tMe+", device: "+CudaCore.cudaGetDevice());
             commBarrier();
             if (tMe==0) System.out.println("===============================");
         }
-    }
-    protected void assignGpu() throws CudaException {
-        // 多 gpu 简单支持，更复杂的分配使用重写方法实现
-        int tGpuCount = CudaCore.cudaGetDeviceCount();
-        if (tGpuCount == 0) throw new CudaException("No valid CUDA device found.");
-        if (Conf.DEVICE>=0) {
-            if (Conf.DEVICE >= tGpuCount) throw new CudaException("Invalid CUDA device: "+Conf.DEVICE+", device count: "+tGpuCount);
-        }
-        if (tGpuCount > 1) {
-            int tMe = commMe();
-            // 默认优先 cu 数最多的 gpu
-            int tStartDevice = bestGpuDevice_(tGpuCount);
-            // 根据当前的 rank 轮流分配使用 gpu
-            int tThisDevice = (tStartDevice + tMe) % tGpuCount;
-            CudaCore.cudaSetDevice(tThisDevice);
-        }
-    }
-    private static int bestGpuDevice_(int aGpuCount) throws CudaException {
-        if (Conf.DEVICE>=0) return Conf.DEVICE;
-        int tBestDevice = 0, tBestCus = -1;
-        for (int di = 0; di < aGpuCount; ++di) {
-            int tCus = CudaCore.cudaGetDeviceCus(di);
-            if (tCus > tBestCus) {
-                tBestDevice = di;
-                tBestCus = tCus;
-            }
-        }
-        return tBestDevice;
     }
     
     @Override public void initStyle() {

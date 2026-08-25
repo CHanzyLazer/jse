@@ -50,6 +50,8 @@ heat transport, Phys. Rev. B. 104, 104309 (2021).
 // <<< NEPGEN REMOVE
 // <<< NEPGEN PICK [ARCH]
 
+#include <cstdint>
+
 namespace JSE_NEP {
 
 // >>> NEPGEN PICK
@@ -1032,18 +1034,19 @@ template <int USE_TABLE, int VERSION, int NTYPES, int TW_CUTOFF,
           int NMAX_R, int BSIZE_R, int NUMC_R,
           int NMAX_A, int BSIZE_A, int LMAX, int NUML,
           int ANN_DIM, int NUM_NEURONS1>
-static NEP_DEVICE void find_descriptor(const int nb, const int bi,
-    const int *atomic_numbers,
-    flt_t typewise_cutoff_radial_factor, flt_t typewise_cutoff_angular_factor,
-    flt_t rc_radial, flt_t rc_angular,
-    const flt_t *q_scaler,
-    const flt_t **ann_w0, const flt_t **ann_b0, const flt_t **ann_w1, const flt_t *ann_b1, const flt_t *ann_c,
-    int ctype, int num_neigh,
-    const int *g_nl_type,
-    const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
-    const flt_t *gn_radial, const flt_t *gn_angular,
-    flt_t *g_Fp, flt_t *g_sum_fxyz,
-    flt_t *potential) {
+static NEP_DEVICE void find_descriptor(
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_radial_factor, flt_t typewise_cutoff_angular_factor,
+        flt_t rc_radial, flt_t rc_angular,
+        const flt_t *q_scaler,
+        const flt_t **ann_w0, const flt_t **ann_b0, const flt_t **ann_w1, const flt_t *ann_b1, const flt_t *ann_c,
+        int ctype, int num_neigh,
+        const int *g_nl_type,
+        const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
+        const flt_t *gn_radial, const flt_t *gn_angular,
+        flt_t *g_Fp, flt_t *g_sum_fxyz,
+        flt_t *potential) {
+    
     constexpr int num_types_sq = NTYPES * NTYPES;
     const flt_t rcinv_radial = (flt_t)1.0 / rc_radial;
     const flt_t rcinv_angular = (flt_t)1.0 / rc_angular;
@@ -1052,13 +1055,13 @@ static NEP_DEVICE void find_descriptor(const int nb, const int bi,
     flt_t q[MAX_DIM] = {0.0};
 
     for (int i1 = 0; i1 < num_neigh; ++i1) {
-        flt_t r12[3] = {g_nl_dx[i1*nb + bi], g_nl_dy[i1*nb + bi], g_nl_dz[i1*nb + bi]};
+        flt_t r12[3] = {g_nl_dx[i1], g_nl_dy[i1], g_nl_dz[i1]};
         flt_t d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
         if (d12sq >= rc_radial * rc_radial) {
             continue;
         }
         flt_t d12 = nep_sqrt(d12sq);
-        int t2 = g_nl_type[i1*nb + bi];
+        int t2 = g_nl_type[i1];
 
         if (USE_TABLE) {
             int index_left, index_right;
@@ -1096,13 +1099,13 @@ static NEP_DEVICE void find_descriptor(const int nb, const int bi,
     for (int n = 0; n <= NMAX_A; ++n) {
         flt_t s[NUM_OF_ABC] = {0.0};
         for (int i1 = 0; i1 < num_neigh; ++i1) {
-            flt_t r12[3] = {g_nl_dx[i1*nb + bi], g_nl_dy[i1*nb + bi], g_nl_dz[i1*nb + bi]};
+            flt_t r12[3] = {g_nl_dx[i1], g_nl_dy[i1], g_nl_dz[i1]};
             flt_t d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
             if (d12sq >= rc_angular * rc_angular) {
                 continue;
             }
             flt_t d12 = nep_sqrt(d12sq);
-            int t2 = g_nl_type[i1*nb + bi];
+            int t2 = g_nl_type[i1];
 
             if (USE_TABLE) {
                 int index_left, index_right;
@@ -1135,7 +1138,7 @@ static NEP_DEVICE void find_descriptor(const int nb, const int bi,
         }
         find_q<LMAX, NUML, NMAX_A>(n, s, q + (NMAX_R+1));
         for (int abc = 0; abc < NUM_OF_ABC; ++abc) {
-            g_sum_fxyz[(n * NUM_OF_ABC + abc) * nb + bi] = s[abc];
+            g_sum_fxyz[n * NUM_OF_ABC + abc] = s[abc];
         }
     }
 
@@ -1160,30 +1163,31 @@ static NEP_DEVICE void find_descriptor(const int nb, const int bi,
     *potential += F;
     
     for (int d = 0; d < ANN_DIM; ++d) {
-        g_Fp[d * nb + bi] = Fp[d] * q_scaler[d];
+        g_Fp[d] = Fp[d] * q_scaler[d];
     }
 }
 
 template <int USE_TABLE, int NTYPES, int TW_CUTOFF,
           int NMAX_R, int BSIZE_R>
-static NEP_DEVICE void find_force_radial(const int nb, const int bi,
-    const int *atomic_numbers,
-    flt_t typewise_cutoff_radial_factor,
-    flt_t rc_radial,
-    const flt_t *ann_c,
-    int ctype, int num_neigh,
-    const int *g_nl_type,
-    const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
-    flt_t *g_Fp,
-    const flt_t *gnp_radial,
-    flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+static NEP_DEVICE void find_force_radial(
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_radial_factor,
+        flt_t rc_radial,
+        const flt_t *ann_c,
+        int ctype, int num_neigh,
+        const int *g_nl_type,
+        const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
+        flt_t *g_Fp,
+        const flt_t *gnp_radial,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+    
     constexpr int num_types_sq = NTYPES * NTYPES;
     const flt_t rcinv_radial = (flt_t)1.0 / rc_radial;
     
     int t1 = ctype;
     for (int i1 = 0; i1 < num_neigh; ++i1) {
-        int t2 = g_nl_type[i1*nb + bi];
-        flt_t r12[3] = {g_nl_dx[i1*nb + bi], g_nl_dy[i1*nb + bi], g_nl_dz[i1*nb + bi]};
+        int t2 = g_nl_type[i1];
+        flt_t r12[3] = {g_nl_dx[i1], g_nl_dy[i1], g_nl_dz[i1]};
         flt_t d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
         if (d12sq >= rc_radial * rc_radial) {
             continue;
@@ -1200,7 +1204,7 @@ static NEP_DEVICE void find_force_radial(const int nb, const int bi,
                 flt_t gnp12 =
                     gnp_radial[(index_left * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_left +
                     gnp_radial[(index_right * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_right;
-                flt_t tmp12 = g_Fp[n*nb + bi] * gnp12 * d12inv;
+                flt_t tmp12 = g_Fp[n] * gnp12 * d12inv;
                 for (int d = 0; d < 3; ++d) {
                     f12[d] += tmp12 * r12[d];
                 }
@@ -1224,33 +1228,34 @@ static NEP_DEVICE void find_force_radial(const int nb, const int bi,
                     c_index += t1 * NTYPES + t2;
                     gnp12 += fnp12[k] * ann_c[c_index];
                 }
-                flt_t tmp12 = g_Fp[n*nb + bi] * gnp12 * d12inv;
+                flt_t tmp12 = g_Fp[n] * gnp12 * d12inv;
                 for (int d = 0; d < 3; ++d) {
                     f12[d] += tmp12 * r12[d];
                 }
             }
         }
 
-        g_nl_fx[i1*nb + bi] += f12[0];
-        g_nl_fy[i1*nb + bi] += f12[1];
-        g_nl_fz[i1*nb + bi] += f12[2];
+        g_nl_fx[i1] += f12[0];
+        g_nl_fy[i1] += f12[1];
+        g_nl_fz[i1] += f12[2];
     }
 }
 
 template <int USE_TABLE, int NTYPES, int TW_CUTOFF,
           int NMAX_R, int NUMC_R,
           int NMAX_A, int BSIZE_A, int LMAX, int NUML, int ANN_DIM_A>
-static NEP_DEVICE void find_force_angular(const int nb, const int bi,
-    const int *atomic_numbers,
-    flt_t typewise_cutoff_angular_factor,
-    flt_t rc_angular,
-    const flt_t *ann_c,
-    int ctype, int num_neigh,
-    const int *g_nl_type,
-    const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
-    flt_t *g_Fp, flt_t *g_sum_fxyz,
-    const flt_t *gn_angular, const flt_t *gnp_angular,
-    flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+static NEP_DEVICE void find_force_angular(
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_angular_factor,
+        flt_t rc_angular,
+        const flt_t *ann_c,
+        int ctype, int num_neigh,
+        const int *g_nl_type,
+        const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
+        flt_t *g_Fp, flt_t *g_sum_fxyz,
+        const flt_t *gn_angular, const flt_t *gnp_angular,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+    
     constexpr int num_types_sq = NTYPES * NTYPES;
     const flt_t rcinv_angular = (flt_t)1.0 / rc_angular;
     
@@ -1259,15 +1264,15 @@ static NEP_DEVICE void find_force_angular(const int nb, const int bi,
     flt_t Fp[MAX_DIM_ANGULAR] = {0.0};
     flt_t sum_fxyz[NUM_OF_ABC * MAX_NUM_N];
     for (int d = 0; d < ANN_DIM_A; ++d) {
-        Fp[d] = g_Fp[(NMAX_R + 1 + d)*nb + bi];
+        Fp[d] = g_Fp[(NMAX_R + 1 + d)];
     }
     for (int d = 0; d < (NMAX_R + 1) * NUM_OF_ABC; ++d) {
-        sum_fxyz[d] = g_sum_fxyz[d*nb + bi];
+        sum_fxyz[d] = g_sum_fxyz[d];
     }
 
     for (int i1 = 0; i1 < num_neigh; ++i1) {
-        int t2 = g_nl_type[i1*nb + bi];
-        flt_t r12[3] = {g_nl_dx[i1*nb + bi], g_nl_dy[i1*nb + bi], g_nl_dz[i1*nb + bi]};
+        int t2 = g_nl_type[i1];
+        flt_t r12[3] = {g_nl_dx[i1], g_nl_dy[i1], g_nl_dz[i1]};
         flt_t d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];
         if (d12sq >= rc_angular * rc_angular) {
             continue;
@@ -1312,28 +1317,29 @@ static NEP_DEVICE void find_force_angular(const int nb, const int bi,
             }
         }
 
-        g_nl_fx[i1*nb + bi] += f12[0];
-        g_nl_fy[i1*nb + bi] += f12[1];
-        g_nl_fz[i1*nb + bi] += f12[2];
+        g_nl_fx[i1] += f12[0];
+        g_nl_fy[i1] += f12[1];
+        g_nl_fz[i1] += f12[2];
     }
 }
 
 template <int NTYPES, int TW_CUTOFF_ZBL, int ZBL_FLEXIBLED>
-static NEP_DEVICE void find_force_ZBL(const int nb, const int bi,
-    const int *atomic_numbers,
-    flt_t typewise_cutoff_zbl_factor,
-    const flt_t *zbl_para,
-    flt_t zbl_rc_inner, flt_t zbl_rc_outer,
-    int ctype, int num_neigh,
-    const int *g_nl_type,
-    const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
-    flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz,
-    flt_t *potential) {
+static NEP_DEVICE void find_force_ZBL(
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_zbl_factor,
+        const flt_t *zbl_para,
+        flt_t zbl_rc_inner, flt_t zbl_rc_outer,
+        int ctype, int num_neigh,
+        const int *g_nl_type,
+        const flt_t *g_nl_dx, const flt_t *g_nl_dy, const flt_t *g_nl_dz,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz,
+        flt_t *potential) {
+    
     int type1 = ctype;
     int zi = atomic_numbers[type1] + 1;
     flt_t pow_zi = nep_pow((flt_t)zi, (flt_t)0.23);
     for (int i1 = 0; i1 < num_neigh; ++i1) {
-        flt_t r12[3] = {g_nl_dx[i1*nb + bi], g_nl_dy[i1*nb + bi], g_nl_dz[i1*nb + bi]};
+        flt_t r12[3] = {g_nl_dx[i1], g_nl_dy[i1], g_nl_dz[i1]};
         flt_t d12sq = r12[0] * r12[0] + r12[1] * r12[1] + r12[2] * r12[2];;
         flt_t max_rc_outer = 2.5;
         if (d12sq >= max_rc_outer * max_rc_outer) {
@@ -1343,7 +1349,7 @@ static NEP_DEVICE void find_force_ZBL(const int nb, const int bi,
         
         flt_t d12inv = (flt_t)1.0 / d12;
         flt_t f, fp;
-        int type2 = g_nl_type[i1*nb + bi];
+        int type2 = g_nl_type[i1];
         int zj = atomic_numbers[type2] + 1;
         flt_t a_inv = (pow_zi + nep_pow((flt_t)zj, (flt_t)0.23)) * (flt_t)2.134563;
         flt_t zizj = K_C_SP * (flt_t)zi * (flt_t)zj;
@@ -1376,9 +1382,386 @@ static NEP_DEVICE void find_force_ZBL(const int nb, const int bi,
         flt_t f2 = fp * d12inv * (flt_t)0.5;
         flt_t f12[3] = {r12[0] * f2, r12[1] * f2, r12[2] * f2};
         
-        g_nl_fx[i1*nb + bi] += f12[0];
-        g_nl_fy[i1*nb + bi] += f12[1];
-        g_nl_fz[i1*nb + bi] += f12[2];
+        g_nl_fx[i1] += f12[0];
+        g_nl_fy[i1] += f12[1];
+        g_nl_fz[i1] += f12[2];
+        
+        *potential += f * (flt_t)0.5;
+    }
+}
+
+
+
+template <int USE_TABLE, int VERSION, int NTYPES, int TW_CUTOFF,
+          int NMAX_R, int BSIZE_R, int NUMC_R,
+          int NMAX_A, int BSIZE_A, int LMAX, int NUML,
+          int ANN_DIM, int NUM_NEURONS1>
+static NEP_DEVICE void find_descriptor_gpu(const int nb, const int bi,
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_radial_factor, flt_t typewise_cutoff_angular_factor,
+        flt_t rc_radial, flt_t rc_angular,
+        const flt_t *q_scaler,
+        const flt_t **ann_w0, const flt_t **ann_b0, const flt_t **ann_w1, const flt_t *ann_b1, const flt_t *ann_c,
+        const int nlsize, const int *nlidx,
+        const flt_t *posx, const flt_t *posy, const flt_t *posz, const int *type,
+        const flt_t *gn_radial, const flt_t *gn_angular,
+        flt_t *g_Fp, flt_t *g_sum_fxyz,
+        flt_t *potential) {
+    
+    constexpr int num_types_sq = NTYPES * NTYPES;
+    const flt_t rcinv_radial = (flt_t)1.0 / rc_radial;
+    const flt_t rcinv_angular = (flt_t)1.0 / rc_angular;
+    
+    const flt_t x1 = posx[bi];
+    const flt_t y1 = posy[bi];
+    const flt_t z1 = posz[bi];
+    const int t1 = type[bi];
+    flt_t q[MAX_DIM] = {0.0};
+    
+    for (int jj = 0; jj < nlsize; ++jj) {
+        const int j = nlidx[(size_t)jj*nb + bi];
+        flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
+        flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
+        if (d12sq >= rc_radial*rc_radial) {
+            continue;
+        }
+        flt_t d12 = nep_sqrt(d12sq);
+        int t2 = type[j];
+
+        if (USE_TABLE) {
+            int index_left, index_right;
+            flt_t weight_left, weight_right;
+            find_index_and_weight(d12 * rcinv_radial, index_left, index_right, weight_left, weight_right);
+            int t12 = t1*NTYPES + t2;
+            for (int n = 0; n <= NMAX_R; ++n) {
+                q[n] +=
+                    gn_radial[(index_left * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_left +
+                    gn_radial[(index_right * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_right;
+            }
+        } else {
+            flt_t fc12;
+            flt_t rc = rc_radial;
+            flt_t rcinv = rcinv_radial;
+            if (TW_CUTOFF) {
+                rc = nep_min(rc, (COVALENT_RADIUS[atomic_numbers[t1]] + COVALENT_RADIUS[atomic_numbers[t2]]) * typewise_cutoff_radial_factor);
+                rcinv = (flt_t)1.0 / rc;
+            }
+            find_fc(rc, rcinv, d12, fc12);
+            flt_t fn12[MAX_NUM_N];
+            find_fn<BSIZE_R>(rcinv, d12, fc12, fn12);
+            for (int n = 0; n <= NMAX_R; ++n) {
+                flt_t gn12 = 0.0;
+                for (int k = 0; k <= BSIZE_R; ++k) {
+                    int c_index = (n * (BSIZE_R + 1) + k) * num_types_sq;
+                    c_index += t1 * NTYPES + t2;
+                    gn12 += fn12[k] * ann_c[c_index];
+                }
+                q[n] += gn12;
+            }
+        }
+    }
+
+    for (int n = 0; n <= NMAX_A; ++n) {
+        flt_t s[NUM_OF_ABC] = {0.0};
+        for (int jj = 0; jj < nlsize; ++jj) {
+            const int j = nlidx[(size_t)jj*nb + bi];
+            flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
+            flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
+            if (d12sq >= rc_angular*rc_angular) {
+                continue;
+            }
+            flt_t d12 = nep_sqrt(d12sq);
+            int t2 = type[j];
+
+            if (USE_TABLE) {
+                int index_left, index_right;
+                flt_t weight_left, weight_right;
+                find_index_and_weight(d12 * rcinv_angular, index_left, index_right, weight_left, weight_right);
+                int t12 = t1 * NTYPES + t2;
+                flt_t gn12 =
+                    gn_angular[(index_left * num_types_sq + t12) * (NMAX_A + 1) + n] * weight_left +
+                    gn_angular[(index_right * num_types_sq + t12) * (NMAX_A + 1) + n] * weight_right;
+                accumulate_s<LMAX>(d12, r12[0], r12[1], r12[2], gn12, s);
+            } else {
+                flt_t fc12;
+                flt_t rc = rc_angular;
+                flt_t rcinv = rcinv_angular;
+                if (TW_CUTOFF) {
+                    rc = nep_min(rc, (COVALENT_RADIUS[atomic_numbers[t1]] + COVALENT_RADIUS[atomic_numbers[t2]]) * typewise_cutoff_angular_factor);
+                    rcinv = (flt_t)1.0 / rc;
+                }
+                find_fc(rc, rcinv, d12, fc12);
+                flt_t fn12[MAX_NUM_N];
+                find_fn<BSIZE_A>(rcinv, d12, fc12, fn12);
+                flt_t gn12 = 0.0;
+                for (int k = 0; k <= BSIZE_A; ++k) {
+                    int c_index = (n * (BSIZE_A + 1) + k) * num_types_sq;
+                    c_index += t1 * NTYPES + t2 + NUMC_R;
+                    gn12 += fn12[k] * ann_c[c_index];
+                }
+                accumulate_s<LMAX>(d12, r12[0], r12[1], r12[2], gn12, s);
+            }
+        }
+        find_q<LMAX, NUML, NMAX_A>(n, s, q + (NMAX_R+1));
+        for (int abc = 0; abc < NUM_OF_ABC; ++abc) {
+            g_sum_fxyz[(size_t)(n*NUM_OF_ABC + abc)*nb + bi] = s[abc];
+        }
+    }
+
+    for (int d = 0; d < ANN_DIM; ++d) {
+        q[d] = q[d] * q_scaler[d];
+    }
+
+    flt_t F = 0.0, Fp[MAX_DIM] = {0.0}, latent_space[MAX_NEURON] = {0.0};
+
+    if (VERSION == 5) {
+        apply_ann_one_layer_nep5<ANN_DIM, NUM_NEURONS1>(
+            ann_w0[t1], ann_b0[t1], ann_w1[t1], ann_b1, q, F, Fp,
+            latent_space
+        );
+    } else {
+        apply_ann_one_layer<ANN_DIM, NUM_NEURONS1, 0>(
+            ann_w0[t1], ann_b0[t1], ann_w1[t1], ann_b1, q, F, Fp,
+            latent_space, nullptr
+        );
+    }
+    
+    *potential += F;
+    
+    for (int d = 0; d < ANN_DIM; ++d) {
+        g_Fp[(size_t)d*nb + bi] = Fp[d] * q_scaler[d];
+    }
+}
+
+template <int USE_TABLE, int NTYPES, int TW_CUTOFF,
+          int NMAX_R, int BSIZE_R>
+static NEP_DEVICE void find_force_radial_gpu(const int nb, const int bi,
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_radial_factor,
+        flt_t rc_radial,
+        const flt_t *ann_c,
+        const int nlsize, const int *nlidx,
+        const flt_t *posx, const flt_t *posy, const flt_t *posz, const int *type,
+        flt_t *g_Fp,
+        const flt_t *gnp_radial,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+    
+    constexpr int num_types_sq = NTYPES * NTYPES;
+    const flt_t rcinv_radial = (flt_t)1.0 / rc_radial;
+    
+    const flt_t x1 = posx[bi];
+    const flt_t y1 = posy[bi];
+    const flt_t z1 = posz[bi];
+    const int t1 = type[bi];
+    
+    for (int jj = 0; jj < nlsize; ++jj) {
+        const int j = nlidx[(size_t)jj*nb + bi];
+        flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
+        flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
+        if (d12sq >= rc_radial * rc_radial) {
+            continue;
+        }
+        int t2 = type[j];
+        flt_t d12 = nep_sqrt(d12sq);
+        flt_t d12inv = (flt_t)1.0 / d12;
+        flt_t f12[3] = {0.0};
+        if (USE_TABLE) {
+            int index_left, index_right;
+            flt_t weight_left, weight_right;
+            find_index_and_weight(d12 * rcinv_radial, index_left, index_right, weight_left, weight_right);
+            int t12 = t1*NTYPES + t2;
+            for (int n = 0; n <= NMAX_R; ++n) {
+                flt_t gnp12 =
+                    gnp_radial[(index_left * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_left +
+                    gnp_radial[(index_right * num_types_sq + t12) * (NMAX_R + 1) + n] * weight_right;
+                flt_t tmp12 = g_Fp[(size_t)n*nb + bi] * gnp12 * d12inv;
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += tmp12 * r12[d];
+                }
+            }
+        } else {
+            flt_t fc12, fcp12;
+            flt_t rc = rc_radial;
+            flt_t rcinv = rcinv_radial;
+            if (TW_CUTOFF) {
+                rc = nep_min(rc, (COVALENT_RADIUS[atomic_numbers[t1]] + COVALENT_RADIUS[atomic_numbers[t2]]) * typewise_cutoff_radial_factor);
+                rcinv = (flt_t)1.0 / rc;
+            }
+            find_fc_and_fcp(rc, rcinv, d12, fc12, fcp12);
+            flt_t fn12[MAX_NUM_N];
+            flt_t fnp12[MAX_NUM_N];
+            find_fn_and_fnp<BSIZE_R>(rcinv, d12, fc12, fcp12, fn12, fnp12);
+            for (int n = 0; n <= NMAX_R; ++n) {
+                flt_t gnp12 = 0.0;
+                for (int k = 0; k <= BSIZE_R; ++k) {
+                    int c_index = (n * (BSIZE_R + 1) + k) * num_types_sq;
+                    c_index += t1 * NTYPES + t2;
+                    gnp12 += fnp12[k] * ann_c[c_index];
+                }
+                flt_t tmp12 = g_Fp[(size_t)n*nb + bi] * gnp12 * d12inv;
+                for (int d = 0; d < 3; ++d) {
+                    f12[d] += tmp12 * r12[d];
+                }
+            }
+        }
+
+        g_nl_fx[(size_t)jj*nb + bi] += f12[0];
+        g_nl_fy[(size_t)jj*nb + bi] += f12[1];
+        g_nl_fz[(size_t)jj*nb + bi] += f12[2];
+    }
+}
+
+template <int USE_TABLE, int NTYPES, int TW_CUTOFF,
+          int NMAX_R, int NUMC_R,
+          int NMAX_A, int BSIZE_A, int LMAX, int NUML, int ANN_DIM_A>
+static NEP_DEVICE void find_force_angular_gpu(const int nb, const int bi,
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_angular_factor,
+        flt_t rc_angular,
+        const flt_t *ann_c,
+        const int nlsize, const int *nlidx,
+        const flt_t *posx, const flt_t *posy, const flt_t *posz, const int *type,
+        flt_t *g_Fp, flt_t *g_sum_fxyz,
+        const flt_t *gn_angular, const flt_t *gnp_angular,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz) {
+    
+    constexpr int num_types_sq = NTYPES * NTYPES;
+    const flt_t rcinv_angular = (flt_t)1.0 / rc_angular;
+    
+    const flt_t x1 = posx[bi];
+    const flt_t y1 = posy[bi];
+    const flt_t z1 = posz[bi];
+    const int t1 = type[bi];
+    
+    flt_t Fp[MAX_DIM_ANGULAR] = {0.0};
+    flt_t sum_fxyz[NUM_OF_ABC * MAX_NUM_N];
+    for (int d = 0; d < ANN_DIM_A; ++d) {
+        Fp[d] = g_Fp[(size_t)(NMAX_R+1+d)*nb + bi];
+    }
+    for (int d = 0; d < (NMAX_R+1)*NUM_OF_ABC; ++d) {
+        sum_fxyz[d] = g_sum_fxyz[(size_t)d*nb + bi];
+    }
+
+    for (int jj = 0; jj < nlsize; ++jj) {
+        const int j = nlidx[(size_t)jj*nb + bi];
+        flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
+        flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
+        if (d12sq >= rc_angular * rc_angular) {
+            continue;
+        }
+        int t2 = type[j];
+        flt_t d12 = nep_sqrt(d12sq);
+        flt_t f12[3] = {0.0};
+
+        if (USE_TABLE) {
+            int index_left, index_right;
+            flt_t weight_left, weight_right;
+            find_index_and_weight(d12 * rcinv_angular, index_left, index_right, weight_left, weight_right);
+            int t12 = t1 * NTYPES + t2;
+            for (int n = 0; n <= NMAX_A; ++n) {
+                int index_left_all = (index_left * num_types_sq + t12) * (NMAX_A + 1) + n;
+                int index_right_all = (index_right * num_types_sq + t12) * (NMAX_A + 1) + n;
+                flt_t gn12 = gn_angular[index_left_all] * weight_left + gn_angular[index_right_all] * weight_right;
+                flt_t gnp12 = gnp_angular[index_left_all] * weight_left + gnp_angular[index_right_all] * weight_right;
+                accumulate_f12<LMAX, NUML, NMAX_A>(n, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
+            }
+        } else {
+            flt_t fc12, fcp12;
+            flt_t rc = rc_angular;
+            flt_t rcinv = rcinv_angular;
+            if (TW_CUTOFF) {
+                rc = nep_min(rc, (COVALENT_RADIUS[atomic_numbers[t1]] + COVALENT_RADIUS[atomic_numbers[t2]]) * typewise_cutoff_angular_factor);
+                rcinv = (flt_t)1.0 / rc;
+            }
+            find_fc_and_fcp(rc, rcinv, d12, fc12, fcp12);
+            flt_t fn12[MAX_NUM_N];
+            flt_t fnp12[MAX_NUM_N];
+            find_fn_and_fnp<BSIZE_A>(rcinv, d12, fc12, fcp12, fn12, fnp12);
+            for (int n = 0; n <= NMAX_A; ++n) {
+                flt_t gn12 = 0.0;
+                flt_t gnp12 = 0.0;
+                for (int k = 0; k <= BSIZE_A; ++k) {
+                    int c_index = (n * (BSIZE_A + 1) + k) * num_types_sq;
+                    c_index += t1 * NTYPES + t2 + NUMC_R;
+                    gn12 += fn12[k] * ann_c[c_index];
+                    gnp12 += fnp12[k] * ann_c[c_index];
+                }
+                accumulate_f12<LMAX, NUML, NMAX_A>(n, d12, r12, gn12, gnp12, Fp, sum_fxyz, f12);
+            }
+        }
+
+        g_nl_fx[(size_t)jj*nb + bi] += f12[0];
+        g_nl_fy[(size_t)jj*nb + bi] += f12[1];
+        g_nl_fz[(size_t)jj*nb + bi] += f12[2];
+    }
+}
+
+template <int NTYPES, int TW_CUTOFF_ZBL, int ZBL_FLEXIBLED>
+static NEP_DEVICE void find_force_ZBL_gpu(const int nb, const int bi,
+        const int *atomic_numbers,
+        flt_t typewise_cutoff_zbl_factor,
+        const flt_t *zbl_para,
+        flt_t zbl_rc_inner, flt_t zbl_rc_outer,
+        const int nlsize, const int *nlidx,
+        const flt_t *posx, const flt_t *posy, const flt_t *posz, const int *type,
+        flt_t *g_nl_fx, flt_t *g_nl_fy, flt_t *g_nl_fz,
+        flt_t *potential) {
+    
+    const flt_t x1 = posx[bi];
+    const flt_t y1 = posy[bi];
+    const flt_t z1 = posz[bi];
+    const int type1 = type[bi];
+    
+    int zi = atomic_numbers[type1] + 1;
+    flt_t pow_zi = nep_pow((flt_t)zi, (flt_t)0.23);
+    for (int jj = 0; jj < nlsize; ++jj) {
+        const int j = nlidx[(size_t)jj*nb + bi];
+        flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
+        flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
+        flt_t max_rc_outer = 2.5;
+        if (d12sq >= max_rc_outer * max_rc_outer) {
+            continue;
+        }
+        flt_t d12 = nep_sqrt(d12sq);
+        
+        flt_t d12inv = (flt_t)1.0 / d12;
+        flt_t f, fp;
+        int type2 = type[j];
+        int zj = atomic_numbers[type2] + 1;
+        flt_t a_inv = (pow_zi + nep_pow((flt_t)zj, (flt_t)0.23)) * (flt_t)2.134563;
+        flt_t zizj = K_C_SP * (flt_t)zi * (flt_t)zj;
+        if (ZBL_FLEXIBLED) {
+            int t1, t2;
+            if (type1 < type2) {
+                t1 = type1;
+                t2 = type2;
+            }
+            else {
+                t1 = type2;
+                t2 = type1;
+            }
+            int zbl_index = t1 * NTYPES - (t1 * (t1 - 1)) / 2 + (t2 - t1);
+            flt_t ZBL_para[10];
+            for (int i = 0; i < 10; ++i) {
+                ZBL_para[i] = zbl_para[10 * zbl_index + i];
+            }
+            find_f_and_fp_zbl(ZBL_para, zizj, a_inv, d12, d12inv, f, fp);
+        } else {
+            flt_t rc_inner = zbl_rc_inner;
+            flt_t rc_outer = zbl_rc_outer;
+            if (TW_CUTOFF_ZBL) {
+                // zi and zj start from 1, so need to minus 1 here
+                rc_outer = nep_min(rc_outer, (COVALENT_RADIUS[zi - 1] + COVALENT_RADIUS[zj - 1]) * typewise_cutoff_zbl_factor);
+                rc_inner = rc_outer * (flt_t)0.5;
+            }
+            find_f_and_fp_zbl(zizj, a_inv, rc_inner, rc_outer, d12, d12inv, f, fp);
+        }
+        flt_t f2 = fp * d12inv * (flt_t)0.5;
+        flt_t f12[3] = {r12[0] * f2, r12[1] * f2, r12[2] * f2};
+        
+        g_nl_fx[(size_t)jj*nb + bi] += f12[0];
+        g_nl_fy[(size_t)jj*nb + bi] += f12[1];
+        g_nl_fz[(size_t)jj*nb + bi] += f12[2];
         
         *potential += f * (flt_t)0.5;
     }

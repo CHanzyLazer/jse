@@ -66,7 +66,7 @@ __jsefunc__ int jse_nep_calEnergy(
     JSE_NEP::find_descriptor<__NEPGEN_USE_TABLE__, __NEPGEN_VERSION__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
                              __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__, __NEPGEN_NUMC_R__,
                              __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__,
-                             __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(1, 0,
+                             __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(
         atomic_numbers,
         __NEPGEN_TYPEWISE_CUTOFF_FACTOR_R__, __NEPGEN_TYPEWISE_CUTOFF_FACTOR_A__,
         __NEPGEN_RCUT_R__, __NEPGEN_RCUT_A__,
@@ -87,7 +87,7 @@ __jsefunc__ int jse_nep_calEnergy(
             nl_fy[j] = (JSE_NEP::flt_t)0.0;
             nl_fz[j] = (JSE_NEP::flt_t)0.0;
         }
-        JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(1, 0,
+        JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(
             atomic_numbers,
             __NEPGEN_TYPEWISE_CUTOFF_FACTOR_ZBL__,
             __NEPGEN_ZBL_FLEXIBLED__?zbl_para:nullptr,
@@ -128,7 +128,7 @@ __jsefunc__ int jse_nep_calEnergyForce(
     JSE_NEP::find_descriptor<__NEPGEN_USE_TABLE__, __NEPGEN_VERSION__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
                              __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__, __NEPGEN_NUMC_R__,
                              __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__,
-                             __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(1, 0,
+                             __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(
         atomic_numbers,
         __NEPGEN_TYPEWISE_CUTOFF_FACTOR_R__, __NEPGEN_TYPEWISE_CUTOFF_FACTOR_A__,
         __NEPGEN_RCUT_R__, __NEPGEN_RCUT_A__,
@@ -143,7 +143,7 @@ __jsefunc__ int jse_nep_calEnergyForce(
         eng
     );
     JSE_NEP::find_force_radial<__NEPGEN_USE_TABLE__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
-                               __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__>(1, 0,
+                               __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__>(
         atomic_numbers,
         __NEPGEN_TYPEWISE_CUTOFF_FACTOR_R__,
         __NEPGEN_RCUT_R__,
@@ -157,7 +157,7 @@ __jsefunc__ int jse_nep_calEnergyForce(
     );
     JSE_NEP::find_force_angular<__NEPGEN_USE_TABLE__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
                                 __NEPGEN_NMAX_R__, __NEPGEN_NUMC_R__,
-                                __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__, __NEPGEN_ANN_DIM_A__>(1, 0,
+                                __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__, __NEPGEN_ANN_DIM_A__>(
         atomic_numbers,
         __NEPGEN_TYPEWISE_CUTOFF_FACTOR_A__,
         __NEPGEN_RCUT_A__,
@@ -170,7 +170,7 @@ __jsefunc__ int jse_nep_calEnergyForce(
         nl_fx, nl_fy, nl_fz
     );
     if (__NEPGEN_ZBL__) {
-        JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(1, 0,
+        JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(
             atomic_numbers,
             __NEPGEN_TYPEWISE_CUTOFF_FACTOR_ZBL__,
             __NEPGEN_ZBL_FLEXIBLED__?zbl_para:nullptr,
@@ -187,7 +187,7 @@ __jsefunc__ int jse_nep_calEnergyForce(
 
 #define JSE_LMP_NEIGHMASK 0x1FFFFFFF
 
-__jsefunc__ int jse_nep_statNeiNumLammps(int *ilist, int *numneigh, int inum, int *numneighMax) {
+__jsefunc__ int jse_nep_statNlSizeLammps(int *ilist, int *numneigh, int inum, int *numneighMax) {
     int numneighMax_ = 0;
     for (int ii = 0; ii < inum; ++ii) {
         int i = ilist[ii];
@@ -201,7 +201,7 @@ __jsefunc__ int jse_nep_statNeiNumLammps(int *ilist, int *numneigh, int inum, in
 __jsefunc__ int jse_nep_computeLammps(
     int inum, int eflag, int vflag, int eflagAtom, int vflagAtom, int cvflagAtom,
     const double **x, double **f, const int *type,
-    const int *ilist, const int *numneigh, const int **firstneigh, double cutsq, const int *type_map,
+    const int *ilist, const int *numneigh, const int **firstneigh, const int *type_map,
     double *engVdwl, double *eatom, double *virial, double **vatom, double **cvatom,
     JSE_NEP::flt_t *nl_dx, JSE_NEP::flt_t *nl_dy, JSE_NEP::flt_t *nl_dz, int *nl_type, int *nl_idx,
     const int *atomic_numbers, const JSE_NEP::flt_t *q_scaler,
@@ -209,6 +209,9 @@ __jsefunc__ int jse_nep_computeLammps(
     const JSE_NEP::flt_t *zbl_para, const JSE_NEP::flt_t *gn_radial, const JSE_NEP::flt_t *gn_angular, const JSE_NEP::flt_t *gnp_radial, const JSE_NEP::flt_t *gnp_angular,
     JSE_NEP::flt_t *nl_fx, JSE_NEP::flt_t *nl_fy, JSE_NEP::flt_t *nl_fz,
     JSE_NEP::flt_t *fp, JSE_NEP::flt_t *sum_fxyz) {
+    
+    constexpr JSE_NEP::flt_t rcut_max = __NEPGEN_RCUT_R__>__NEPGEN_RCUT_A__ ? __NEPGEN_RCUT_R__ : __NEPGEN_RCUT_A__;
+    constexpr JSE_NEP::flt_t cutsq = rcut_max*rcut_max;
     
     /// begin compute here
     for (int ii = 0; ii < inum; ++ii) {
@@ -259,7 +262,7 @@ __jsefunc__ int jse_nep_computeLammps(
         JSE_NEP::find_descriptor<__NEPGEN_USE_TABLE__, __NEPGEN_VERSION__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
                                  __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__, __NEPGEN_NUMC_R__,
                                  __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__,
-                                 __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(1, 0,
+                                 __NEPGEN_ANN_DIM__, __NEPGEN_NUM_NEURONS1__>(
             atomic_numbers,
             __NEPGEN_TYPEWISE_CUTOFF_FACTOR_R__, __NEPGEN_TYPEWISE_CUTOFF_FACTOR_A__,
             __NEPGEN_RCUT_R__, __NEPGEN_RCUT_A__,
@@ -274,7 +277,7 @@ __jsefunc__ int jse_nep_computeLammps(
             &eng
         );
         JSE_NEP::find_force_radial<__NEPGEN_USE_TABLE__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
-                                   __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__>(1, 0,
+                                   __NEPGEN_NMAX_R__, __NEPGEN_BSIZE_R__>(
             atomic_numbers,
             __NEPGEN_TYPEWISE_CUTOFF_FACTOR_R__,
             __NEPGEN_RCUT_R__,
@@ -288,7 +291,7 @@ __jsefunc__ int jse_nep_computeLammps(
         );
         JSE_NEP::find_force_angular<__NEPGEN_USE_TABLE__, __NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF__,
                                    __NEPGEN_NMAX_R__, __NEPGEN_NUMC_R__,
-                                   __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__, __NEPGEN_ANN_DIM_A__>(1, 0,
+                                   __NEPGEN_NMAX_A__, __NEPGEN_BSIZE_A__, __NEPGEN_LMAX__, __NEPGEN_NUML__, __NEPGEN_ANN_DIM_A__>(
             atomic_numbers,
             __NEPGEN_TYPEWISE_CUTOFF_FACTOR_A__,
             __NEPGEN_RCUT_A__,
@@ -301,7 +304,7 @@ __jsefunc__ int jse_nep_computeLammps(
             nl_fx, nl_fy, nl_fz
         );
         if (__NEPGEN_ZBL__) {
-            JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(1, 0,
+            JSE_NEP::find_force_ZBL<__NEPGEN_NTYPES__, __NEPGEN_USE_TYPEWISE_CUTOFF_ZBL__, __NEPGEN_ZBL_FLEXIBLED__>(
                 atomic_numbers,
                 __NEPGEN_TYPEWISE_CUTOFF_FACTOR_ZBL__,
                 __NEPGEN_ZBL_FLEXIBLED__?zbl_para:nullptr,

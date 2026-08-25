@@ -149,4 +149,34 @@ public class CudaCore {
     static native void cudaMemcpyD2H(long aSrc, long rDest, long aCount) throws CudaException;
     static native void cudaMemcpyD2D(long aSrc, long rDest, long aCount) throws CudaException;
     static native void cudaMemset(long aPtr, int aValue, long aCount) throws CudaException;
+    
+    
+    @ApiStatus.Internal
+    public static void assignDevice(int aRank, int aPrior) throws CudaException {
+        int tGpuCount = CudaCore.cudaGetDeviceCount();
+        if (tGpuCount == 0) throw new CudaException("No valid CUDA device found.");
+        if (aPrior >= 0) {
+            if (aPrior>=tGpuCount) throw new CudaException("Invalid CUDA device: "+ aPrior+", device count: "+tGpuCount);
+        }
+        if (tGpuCount > 1) {
+            // 默认优先 cu 数最多的 gpu
+            int tStartDevice = (aPrior>=0) ? aPrior : CudaCore.bestCudaDevice();
+            // 根据当前的 rank 轮流分配使用 gpu
+            int tThisDevice = (tStartDevice + aRank) % tGpuCount;
+            CudaCore.cudaSetDevice(tThisDevice);
+        }
+    }
+    @ApiStatus.Internal
+    public static int bestCudaDevice() throws CudaException {
+        int tCount = CudaCore.cudaGetDeviceCount();
+        int tBestDevice = 0, tBestCus = -1;
+        for (int di = 0; di < tCount; ++di) {
+            int tCus = CudaCore.cudaGetDeviceCus(di);
+            if (tCus > tBestCus) {
+                tBestDevice = di;
+                tBestCus = tCus;
+            }
+        }
+        return tBestDevice;
+    }
 }
