@@ -264,9 +264,6 @@ public class NNAP extends AbstractPairPotential {
                 if (tModel.get("ref_eng") != null) {
                     throw new IllegalArgumentException("ref_eng in mirror_basis MUST be empty");
                 }
-                if (tModel.get("ref_eng_scale") != null) {
-                    throw new IllegalArgumentException("ref_eng_scale in mirror_basis MUST be empty");
-                }
                 if (UT.Code.get(tModel, "norm_vec", "norm_sigma", "norm_mu") != null) {
                     throw new IllegalArgumentException("norm_vec/norm_sigma/norm_mu in mirror_basis MUST be empty");
                 }
@@ -275,14 +272,12 @@ public class NNAP extends AbstractPairPotential {
             }
             Number tRefEng = (Number)tModel.get("ref_eng");
             double aRefEng = tRefEng==null ? 0.0 : tRefEng.doubleValue();
-            Number tRefEngScale = (Number)tModel.get("ref_eng_scale");
-            double aRefEngScale = tRefEngScale==null ? 1.0 : tRefEngScale.doubleValue();
             List<? extends Number> tNormSigma = (List<? extends Number>)UT.Code.get(tModel, "norm_sigma", "norm_vec");
             List<? extends Number> tNormMu = (List<? extends Number>)tModel.get("norm_mu");
             
             mNormParam.putAt(i, tParam);
             tParam.setD(aNormMuEng+aRefEng); tParam.next();
-            tParam.setD(aNormSigmaEng*aRefEngScale); tParam.next();
+            tParam.setD(aNormSigmaEng); tParam.next();
             int tBasisSize = mBasis[i].size();
             for (int j = 0; j < tBasisSize; ++j) {
                 tParam.putAtD(j, tNormMu==null ? 0.0 : tNormMu.get(j).doubleValue());
