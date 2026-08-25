@@ -20,7 +20,7 @@ static __global__ void initLammpsTypeKernel(int nlocalghost,
 
 static __global__ void initLammpsNeiKernel(int nlocal,
         int *nmerges, int **mergeSorted,
-        flt_t **cutsq, int *nlsize, int *nl,
+        flt_t **cutsq, int *nlsize, int *nlidx,
         int *rMgNlSize, int *rMgNlIdx,
         flt_t *posx, flt_t *posy, flt_t *posz, int *type) {
     
@@ -42,7 +42,7 @@ static __global__ void initLammpsNeiKernel(int nlocal,
         const int k = mergeSorted_[kk];
         const flt_t cutsqR = cutsq_[k];
         for (int jj = 0; jj < jnum; ++jj) {
-            const int j = nl[(size_t)jj*nlocal + i];
+            const int j = nlidx[(size_t)jj*nlocal + i];
             // Note that dxyz in jse and lammps are defined oppositely
             const flt_t dx = posx[j] - xi;
             const flt_t dy = posy[j] - yi;
@@ -448,7 +448,7 @@ __jsefunc__ int jse_nnap_cuda2lammps(
 __jsefunc__ int jse_nnap_computeLammpsCuda(
     int nlocal, int nghost, int eflagEither, int vflag, int vflagAtom,
     JSE_NNAP::flt_t *posx, JSE_NNAP::flt_t *posy, JSE_NNAP::flt_t *posz, int *type,
-    int *nmerges, int **mergeSorted, JSE_NNAP::flt_t **cutsq, int *nlsize, int *nl, int *aLmpType2NNAPType,
+    int *nmerges, int **mergeSorted, JSE_NNAP::flt_t **cutsq, int *nlsize, int *nlidx, int *aLmpType2NNAPType,
     JSE_NNAP::flt_t **aFpHyperParam, JSE_NNAP::flt_t **aFpParam, JSE_NNAP::flt_t **aNnParam, JSE_NNAP::flt_t **aNormParam,
     JSE_NNAP::flt_t *rFpForwardCache,
     JSE_NNAP::flt_t *f, JSE_NNAP::flt_t *eatom0, JSE_NNAP::flt_t *vatom0, JSE_NNAP::flt_t *vatom1,
@@ -482,7 +482,7 @@ __jsefunc__ int jse_nnap_computeLammpsCuda(
     );
     JSE_NNAP::initLammpsNeiKernel<<<tGridSize, tBlockSize>>>(nlocal,
         nmerges, mergeSorted,
-        cutsq, nlsize, nl,
+        cutsq, nlsize, nlidx,
         rMgNlSize, rMgNlIdx,
         posx, posy, posz, type
     );

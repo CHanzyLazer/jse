@@ -127,7 +127,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
     final PointerManager mPtrMng;
     private final CudaPointer mCells;
     private final AnyCPointer mCellsCpu;
-    private final IntCudaPointer mCellTot, mCellSize, mNl, mNlSize;
+    private final IntCudaPointer mCellTot, mCellSize, mNlIdx, mNlSize;
     private final IntCPointer mCellSizeCpu, mNlSizeCpu;
     private int mLocalCellCapacity = -1, mGhostCellCapacity = -1, mNlCapacity = -1;
     private final IntCPointer mLocalCellMax, mGhostCellMax, mNlMax;
@@ -148,7 +148,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         mCellTot = mPtrMng.newIntCudaPointer();
         mCellSize = mPtrMng.newIntCudaPointer();
         mCellSizeCpu = mPtrMng.newIntCPointer();
-        mNl = mPtrMng.newIntCudaPointer();
+        mNlIdx = mPtrMng.newIntCudaPointer();
         mNlSize = mPtrMng.newIntCudaPointer();
         mNlSizeCpu = mPtrMng.newIntCPointer();
         mLocalCellMax = mPtrMng.newIntCPointer(1);
@@ -260,7 +260,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
         if (tNlCap > mNlCapacity) {
             mNlCapacity = MathEX.Code.ceil2int(tNlCap*1.25);
         }
-        mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
+        mPtrMng.ensureCapacity(mNlIdx, (long)nlocal*mNlCapacity, false);
         mPtrMng.ensureCapacity(mNlSize, nlocal);
         mPtrMng.ensureCapacity(mNlSizeCpu, nlocal);
     }
@@ -270,7 +270,7 @@ public class CudaNeighborListGetter implements AutoCloseable {
             (float)mB.mX, (float)mB.mY, (float)mB.mZ, (float)mC.mX, (float)mC.mY, (float)mC.mZ,
             mPos.ptr_(), mSliceX, mSliceY, mSliceZ,
             mCells.ptr_(), mCellSize.ptr_(), (float)mRCutSq,
-            mNl.ptr_(), mNlSize.ptr_(), mNlSizeCpu.ptr_(), mNlCapacity, mNlMax.ptr_()
+            mNlIdx.ptr_(), mNlSize.ptr_(), mNlSizeCpu.ptr_(), mNlCapacity, mNlMax.ptr_()
         );
         CudaCore.cudaExceptionCheck(tCode);
     }
@@ -279,15 +279,12 @@ public class CudaNeighborListGetter implements AutoCloseable {
         int tNlMax = mNlMax.get();
         if (tNlMax > mNlCapacity) {
             mNlCapacity = MathEX.Code.ceil2int(tNlMax*1.25);
-            mPtrMng.ensureCapacity(mNl, (long)nlocal*mNlCapacity, false);
+            mPtrMng.ensureCapacity(mNlIdx, (long)nlocal*mNlCapacity, false);
             buildNl(nlocal, nghost);
         }
     }
     
     
-    public int nlmax() {
-        return mNlMax.get();
-    }
     public FloatCudaPointer posX() {
         return mPosX;
     }
@@ -300,11 +297,14 @@ public class CudaNeighborListGetter implements AutoCloseable {
     public IntCudaPointer type() {
         return mType;
     }
-    public IntCudaPointer nl() {
-        return mNl;
+    public IntCudaPointer nlIdx() {
+        return mNlIdx;
     }
-    public IntCudaPointer nlsize() {
+    public IntCudaPointer nlSize() {
         return mNlSize;
+    }
+    public int nlMax() {
+        return mNlMax.get();
     }
     
     private final AccumulatedTimer mCopyTimer = new AccumulatedTimer(), mCellTimer = new AccumulatedTimer(), mNlTimer = new AccumulatedTimer();

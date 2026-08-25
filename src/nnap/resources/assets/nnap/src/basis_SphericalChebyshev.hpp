@@ -5,6 +5,10 @@
 
 #include <cstdint>
 
+// >>> NNAPGEN REMOVE
+#define __NNAPGEN_GPU_CACHE_FORWARD__ 0
+// <<< NNAPGEN REMOVE
+
 namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
@@ -73,7 +77,10 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
-    flt_t *rAnlmBuf = *rForwardCache; *rForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
+    flt_t *rAnlmBuf;
+    if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+        rAnlmBuf = *rForwardCache; *rForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
+    }
     flt_t bY[tLMAll];
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     // change loop order for less cache
@@ -90,13 +97,15 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
             posx, posy, posz, type,
             aRCut, aParams
         );
-        // cache anlm
-        for (int k = 0; k < tLMAll; ++k) {
-            rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
-            rAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi] = bAnlm2[k];
+        if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+            // cache anlm
+            for (int k = 0; k < tLMAll; ++k) {
+                rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+                rAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi] = bAnlm2[k];
+            }
+            tShiftAnlm1 += (2*tLMAll);
+            tShiftAnlm2 += (2*tLMAll);
         }
-        tShiftAnlm1 += (2*tLMAll);
-        tShiftAnlm2 += (2*tLMAll);
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
         calSphL3<L3MAX>(bAnlm1, rFp+tShiftFp+tSizeL2);
@@ -116,9 +125,11 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
             posx, posy, posz, type,
             aRCut, aParams
         );
-        // cache anlm
-        for (int k = 0; k < tLMAll; ++k) {
-            rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+        if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+            // cache anlm
+            for (int k = 0; k < tLMAll; ++k) {
+                rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+            }
         }
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
@@ -255,7 +266,10 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
-    flt_t *tAnlmBuf = *aForwardCache; *aForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
+    flt_t *tAnlmBuf;
+    if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+        tAnlmBuf = *aForwardCache; *aForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
+    }
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     flt_t bAGradAnlm1[tLMAll], bAGradAnlm2[tLMAll];
     // change loop order for less cache
@@ -264,13 +278,25 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     int np = 0, tShiftFp = 0;
     int tShiftAnlm1 = 0, tShiftAnlm2 = tLMAll;
     for (; np < (SIZE_NP-1); np += 2) {
-        // read anlm from cache
-        for (int k = 0; k < tLMAll; ++k) {
-            bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
-            bAnlm2[k] = tAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi];
+        if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+            // read anlm from cache
+            for (int k = 0; k < tLMAll; ++k) {
+                bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
+                bAnlm2[k] = tAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi];
+            }
+            tShiftAnlm1 += (2*tLMAll);
+            tShiftAnlm2 += (2*tLMAll);
+        } else {
+            // recalculated for save cache
+            fill<tLMAll>(bAnlm1, ZERO);
+            fill<tLMAll>(bAnlm2, ZERO);
+            calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, TRUE>(nb, bi, np,
+                aNlSize, aNlIdx,
+                bAGradAnlm1, bAnlm1, bAnlm2,
+                posx, posy, posz, type,
+                aRCut, aParams
+            );
         }
-        tShiftAnlm1 += (2*tLMAll);
-        tShiftAnlm2 += (2*tLMAll);
         fill<tLMAll>(bAGradAnlm1, ZERO);
         fill<tLMAll>(bAGradAnlm2, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
@@ -292,9 +318,19 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     }
     // rest
     if (SIZE_NP%2 == 1) {
-        // read anlm from cache
-        for (int k = 0; k < tLMAll; ++k) {
-            bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
+        if (__NNAPGEN_GPU_CACHE_FORWARD__) {
+            // read anlm from cache
+            for (int k = 0; k < tLMAll; ++k) {
+                bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
+            }
+        } else {
+            fill<tLMAll>(bAnlm1, ZERO);
+            calAnlmGpu<WTYPE, MTYPE, NMAX, tLMaxMax, SIZE_NP, FALSE>(nb, bi, np,
+                aNlSize, aNlIdx,
+                bAGradAnlm1, bAnlm1, NULL,
+                posx, posy, posz, type,
+                aRCut, aParams
+            );
         }
         fill<tLMAll>(bAGradAnlm1, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
