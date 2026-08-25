@@ -16,7 +16,7 @@
 #include "lammps/neighbor.h"
 #include "lammps/variable.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 using namespace LAMMPS_NS;
 

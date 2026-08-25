@@ -1,5 +1,6 @@
 package jsex.nnap;
 
+import groovy.lang.DeprecationException;
 import jse.atom.AbstractPairPotential;
 import jse.atom.IAtomData;
 import jse.code.IO;
@@ -1005,30 +1006,31 @@ public class NNAP extends AbstractPairPotential {
                       long g_type,
                       long g_fx, long g_fy, long g_fz,
                       long g_virial, long g_potential) throws CudaException {
-        if (isClosed()) throw new IllegalStateException("This NNAP is dead");
-        if (!mCuda) throw new IllegalStateException();
-        // GPUMD 传来的 nl dxyz 总是单精度的，这里直接使用因此强制要求内部一定为单精度
-        if (!mSingle) throw new IllegalStateException();
-        
-        initGpumdDataCuda_();
-        // 近邻列表缓存向量长度规范
-//        mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)number_of_particles*(mNMergesMax+1));
-//        int tTotNlSize = number_of_particles*neighnumMax;
-//        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
-//        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
-//        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
-        
-        int tCode = mComputeGPUMD.invoke(
-            number_of_particles, N1, N2,
-            new IntCudaPointer(g_neighbor_number), new IntCudaPointer(g_neighbor_list),
-            new FloatCudaPointer(nl_dx), new FloatCudaPointer(nl_dy), new FloatCudaPointer(nl_dz), new IntCudaPointer(g_type),
-            mCudaNMerges, mCudaMergeSorted, mCudaCutsq,
-            mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
-            new DoubleCudaPointer(g_fx), new DoubleCudaPointer(g_fy), new DoubleCudaPointer(g_fz),
-            new DoubleCudaPointer(g_virial), new DoubleCudaPointer(g_potential)
-//            mCudaBufNlDx, mCudaBufNlDy, mCudaBufNlDz, mCudaBufNlType, mCudaBufNlIdx, mCudaBufNlSize,
-//            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz
-        );
-        CudaCore.cudaExceptionCheck(tCode);
+        throw new DeprecationException("Use newer version for GPUMD support");
+//        if (isClosed()) throw new IllegalStateException("This NNAP is dead");
+//        if (!mCuda) throw new IllegalStateException();
+//        // GPUMD 传来的 nl dxyz 总是单精度的，这里直接使用因此强制要求内部一定为单精度
+//        if (!mSingle) throw new IllegalStateException();
+//
+//        initGpumdDataCuda_();
+//        // 近邻列表缓存向量长度规范
+////        mPtrMngTot.ensureCapacity(mCudaBufNlSize, (long)number_of_particles*(mNMergesMax+1));
+////        int tTotNlSize = number_of_particles*neighnumMax;
+////        mPtrMngTot.ensureCapacity(mCudaBufNlFx, tTotNlSize);
+////        mPtrMngTot.ensureCapacity(mCudaBufNlFy, tTotNlSize);
+////        mPtrMngTot.ensureCapacity(mCudaBufNlFz, tTotNlSize);
+//
+//        int tCode = mComputeGPUMD.invoke(
+//            number_of_particles, N1, N2,
+//            new IntCudaPointer(g_neighbor_number), new IntCudaPointer(g_neighbor_list),
+//            new FloatCudaPointer(nl_dx), new FloatCudaPointer(nl_dy), new FloatCudaPointer(nl_dz), new IntCudaPointer(g_type),
+//            mCudaNMerges, mCudaMergeSorted, mCudaCutsq,
+//            mCudaFpHyperParam, mCudaFpParam, mCudaNnParam, mCudaNormParam,
+//            new DoubleCudaPointer(g_fx), new DoubleCudaPointer(g_fy), new DoubleCudaPointer(g_fz),
+//            new DoubleCudaPointer(g_virial), new DoubleCudaPointer(g_potential)
+////            mCudaBufNlDx, mCudaBufNlDy, mCudaBufNlDz, mCudaBufNlType, mCudaBufNlIdx, mCudaBufNlSize,
+////            mCudaBufNlFx, mCudaBufNlFy, mCudaBufNlFz
+//        );
+//        CudaCore.cudaExceptionCheck(tCode);
     }
 }

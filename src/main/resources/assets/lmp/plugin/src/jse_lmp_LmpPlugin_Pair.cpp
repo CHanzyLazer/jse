@@ -1,7 +1,7 @@
 #include "jse_lmp_LmpPlugin_Pair.h"
 #include "pair_jse.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 extern "C" {
 

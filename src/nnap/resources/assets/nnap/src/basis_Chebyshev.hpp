@@ -3,6 +3,8 @@
 
 #include "basis_ChebyshevUtil.hpp"
 
+#include <cstdint>
+
 namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int SIZE_NP>
@@ -21,7 +23,7 @@ static NNAP_DEVICE void chebyForwardGpu(int nb, int bi,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aNlIdx[jj*nb + bi];
+        const int j = aNlIdx[(size_t)jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -60,7 +62,7 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aNlIdx[jj*nb + bi];
+        const int j = aNlIdx[(size_t)jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -100,9 +102,9 @@ static NNAP_DEVICE void chebyBackwardGpu(int nb, int bi,
         const flt_t fxj = rAGradj*dx;
         const flt_t fyj = rAGradj*dy;
         const flt_t fzj = rAGradj*dz;
-        rGradNlDx[jj*nb + bi] += fxj;
-        rGradNlDy[jj*nb + bi] += fyj;
-        rGradNlDz[jj*nb + bi] += fzj;
+        rGradNlDx[(size_t)jj*nb + bi] += fxj;
+        rGradNlDy[(size_t)jj*nb + bi] += fyj;
+        rGradNlDz[(size_t)jj*nb + bi] += fzj;
     }
 }
 

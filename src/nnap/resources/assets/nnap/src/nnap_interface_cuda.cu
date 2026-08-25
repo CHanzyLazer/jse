@@ -42,14 +42,14 @@ static __global__ void initLammpsNeiKernel(int nlocal,
         const int k = mergeSorted_[kk];
         const flt_t cutsqR = cutsq_[k];
         for (int jj = 0; jj < jnum; ++jj) {
-            const int j = nl[jj*nlocal + i];
+            const int j = nl[(size_t)jj*nlocal + i];
             // Note that dxyz in jse and lammps are defined oppositely
             const flt_t dx = posx[j] - xi;
             const flt_t dy = posy[j] - yi;
             const flt_t dz = posz[j] - zi;
             const flt_t rsq = dx*dx + dy*dy + dz*dz;
             if (rsq>=cutsqL && rsq<cutsqR) {
-                rMgNlIdx[tNlSize*nlocal + i] = j;
+                rMgNlIdx[(size_t)tNlSize*nlocal + i] = j;
                 ++tNlSize;
             }
         }
@@ -122,10 +122,10 @@ static __global__ void computeLammpsKernel(int nlocal, int nghost,
     const flt_t yi = (VTOTAL||VATOM) ? posy[i] : ZERO;
     const flt_t zi = (VTOTAL||VATOM) ? posz[i] : ZERO;
     for (int jj = 0; jj < tNlSize; ++jj) {
-        const int j = rMgNlIdx[jj*nlocal + i];
-        const flt_t fxj = rGradNlDx[jj*nlocal + i];
-        const flt_t fyj = rGradNlDy[jj*nlocal + i];
-        const flt_t fzj = rGradNlDz[jj*nlocal + i];
+        const int j = rMgNlIdx[(size_t)jj*nlocal + i];
+        const flt_t fxj = rGradNlDx[(size_t)jj*nlocal + i];
+        const flt_t fyj = rGradNlDy[(size_t)jj*nlocal + i];
+        const flt_t fzj = rGradNlDz[(size_t)jj*nlocal + i];
         f0xi += fxj; f0yi += fyj; f0zi += fzj;
         atomicAdd(f + (0*nlocalghost + j), -fxj);
         atomicAdd(f + (1*nlocalghost + j), -fyj);
@@ -261,17 +261,17 @@ static __global__ void initGpumdNeiKernel(int number_of_particles, int N1, int N
         const int k = mergeSorted_[kk];
         const flt_t cutsqR = cutsq_[k];
         for (int jj = 0; jj < jnum; ++jj) {
-            const int j = g_neighbor_list[jj*number_of_particles + ii];
-            const flt_t delx = (flt_t)nl_dx[jj*number_of_particles + ii];
-            const flt_t dely = (flt_t)nl_dy[jj*number_of_particles + ii];
-            const flt_t delz = (flt_t)nl_dz[jj*number_of_particles + ii];
+            const int j = g_neighbor_list[(size_t)jj*number_of_particles + ii];
+            const flt_t delx = (flt_t)nl_dx[(size_t)jj*number_of_particles + ii];
+            const flt_t dely = (flt_t)nl_dy[(size_t)jj*number_of_particles + ii];
+            const flt_t delz = (flt_t)nl_dz[(size_t)jj*number_of_particles + ii];
             const flt_t rsq = delx*delx + dely*dely + delz*delz;
             if (rsq>=cutsqL && rsq<cutsqR) {
-                rBufNlDx[tNeiNum*number_of_particles + ii] = delx;
-                rBufNlDy[tNeiNum*number_of_particles + ii] = dely;
-                rBufNlDz[tNeiNum*number_of_particles + ii] = delz;
-                rBufNlType[tNeiNum*number_of_particles + ii] = g_type[j] + 1; // GPUMD start from 0
-                rBufNlIdx[tNeiNum*number_of_particles + ii] = j;
+                rBufNlDx[(size_t)tNeiNum*number_of_particles + ii] = delx;
+                rBufNlDy[(size_t)tNeiNum*number_of_particles + ii] = dely;
+                rBufNlDz[(size_t)tNeiNum*number_of_particles + ii] = delz;
+                rBufNlType[(size_t)tNeiNum*number_of_particles + ii] = g_type[j] + 1; // GPUMD start from 0
+                rBufNlIdx[(size_t)tNeiNum*number_of_particles + ii] = j;
                 ++tNeiNum;
             }
         }
@@ -295,9 +295,9 @@ static __global__ void computeGpumdKernel(int number_of_particles, int N1, int N
     // manual clear required for backward in force
     flt_t rEng = ZERO;
     for (int jj = 0; jj < tNeiNum; ++jj) {
-        rBufGradNlDx[jj*number_of_particles + ii] = ZERO;
-        rBufGradNlDy[jj*number_of_particles + ii] = ZERO;
-        rBufGradNlDz[jj*number_of_particles + ii] = ZERO;
+        rBufGradNlDx[(size_t)jj*number_of_particles + ii] = ZERO;
+        rBufGradNlDy[(size_t)jj*number_of_particles + ii] = ZERO;
+        rBufGradNlDz[(size_t)jj*number_of_particles + ii] = ZERO;
     }
 // >>> NNAPGEN SWITCH
     flt_t rFpOrGradFp[__NNAPGENX_FP_SIZE__];
@@ -341,19 +341,19 @@ static __global__ void collectGpumdResultsKernel(int number_of_particles, int N1
     flt_t f0y = ZERO;
     flt_t f0z = ZERO;
     for (int jj = 0; jj < tNeiNum; ++jj) {
-        const int j = aBufNlIdx[jj*number_of_particles + ii];
-        const flt_t fx = rBufGradNlDx[jj*number_of_particles + ii];
-        const flt_t fy = rBufGradNlDy[jj*number_of_particles + ii];
-        const flt_t fz = rBufGradNlDz[jj*number_of_particles + ii];
+        const int j = aBufNlIdx[(size_t)jj*number_of_particles + ii];
+        const flt_t fx = rBufGradNlDx[(size_t)jj*number_of_particles + ii];
+        const flt_t fy = rBufGradNlDy[(size_t)jj*number_of_particles + ii];
+        const flt_t fz = rBufGradNlDz[(size_t)jj*number_of_particles + ii];
         f0x += fx;
         f0y += fy;
         f0z += fz;
         atomicAdd(g_fx + j, -fx);
         atomicAdd(g_fy + j, -fy);
         atomicAdd(g_fz + j, -fz);
-        const flt_t dx = aBufNlDx[jj*number_of_particles + ii];
-        const flt_t dy = aBufNlDy[jj*number_of_particles + ii];
-        const flt_t dz = aBufNlDz[jj*number_of_particles + ii];
+        const flt_t dx = aBufNlDx[(size_t)jj*number_of_particles + ii];
+        const flt_t dy = aBufNlDy[(size_t)jj*number_of_particles + ii];
+        const flt_t dz = aBufNlDz[(size_t)jj*number_of_particles + ii];
         atomicAdd(g_virial + (0*number_of_particles + j), -dx*fx);
         atomicAdd(g_virial + (1*number_of_particles + j), -dy*fy);
         atomicAdd(g_virial + (2*number_of_particles + j), -dz*fz);
@@ -388,9 +388,9 @@ __jsefunc__ int jse_nnap_cuda2lammps(
     tErr = cudaMemcpy(fltBuf, cudaF, nlocalghost*3L*sizeof(JSE_NNAP::flt_t), cudaMemcpyDeviceToHost);
     if (tErr!=cudaSuccess) return (int)tErr;
     for (int i = 0; i < nlocalghost; ++i) {
-        f[i][0] += (double)fltBuf[0*nlocalghost + i];
-        f[i][1] += (double)fltBuf[1*nlocalghost + i];
-        f[i][2] += (double)fltBuf[2*nlocalghost + i];
+        f[i][0] += (double)fltBuf[0L*nlocalghost + i];
+        f[i][1] += (double)fltBuf[1L*nlocalghost + i];
+        f[i][2] += (double)fltBuf[2L*nlocalghost + i];
     }
     
     if (eflag || eflagAtom) {

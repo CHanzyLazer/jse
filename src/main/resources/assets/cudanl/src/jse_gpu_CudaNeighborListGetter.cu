@@ -1,6 +1,6 @@
 #include "jse_gpu_CudaNeighborListGetter.h"
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace JSE_CUDANL {
 
@@ -116,7 +116,7 @@ static __global__ void buildNlKernel(const int nlocal,
             const float rsq = dx*dx + dy*dy + dz*dz;
             if (rsq >= rcutsq) continue;
             if (nlsizei < nlCapacity) {
-                nl[nlsizei*nlocal + i] = j;
+                nl[(size_t)nlsizei*nlocal + i] = j;
             }
             ++nlsizei;
         }

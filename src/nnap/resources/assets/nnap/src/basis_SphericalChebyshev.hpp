@@ -3,6 +3,8 @@
 
 #include "basis_SphericalUtil.hpp"
 
+#include <cstdint>
+
 namespace JSE_NNAP {
 
 template <int WTYPE, int MTYPE, int NMAX, int LMAXMAX, int SIZE_NP, int TWO_PASS>
@@ -21,7 +23,7 @@ static NNAP_DEVICE void calAnlmGpu(int nb, int bi, int np,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aNlIdx[jj*nb + bi];
+        const int j = aNlIdx[(size_t)jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -71,7 +73,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
-    flt_t *rAnlmBuf = *rForwardCache; *rForwardCache += (SIZE_NP*tLMAll)*nb;
+    flt_t *rAnlmBuf = *rForwardCache; *rForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
     flt_t bY[tLMAll];
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     // change loop order for less cache
@@ -90,8 +92,8 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         );
         // cache anlm
         for (int k = 0; k < tLMAll; ++k) {
-            rAnlmBuf[(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
-            rAnlmBuf[(k+tShiftAnlm2)*nb + bi] = bAnlm2[k];
+            rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+            rAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi] = bAnlm2[k];
         }
         tShiftAnlm1 += (2*tLMAll);
         tShiftAnlm2 += (2*tLMAll);
@@ -116,7 +118,7 @@ static NNAP_DEVICE void sphForwardGpu(int nb, int bi,
         );
         // cache anlm
         for (int k = 0; k < tLMAll; ++k) {
-            rAnlmBuf[(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
+            rAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi] = bAnlm1[k];
         }
         // anlm -> fp
         calSphL2<LMAX >(bAnlm1, rFp+tShiftFp);
@@ -143,7 +145,7 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
     const flt_t zi = posz[bi];
     const int typei = type[bi];
     for (int jj = 0; jj < aNlSize; ++jj) {
-        const int j = aNlIdx[jj*nb + bi];
+        const int j = aNlIdx[(size_t)jj*nb + bi];
         const flt_t dx = posx[j] - xi;
         const flt_t dy = posy[j] - yi;
         const flt_t dz = posz[j] - zi;
@@ -236,9 +238,9 @@ static NNAP_DEVICE void backwardAnlmGpu(int nb, int bi, int np,
         const flt_t fxj = rAGradj*dx + rAGradThetaj*thetaPx + rAGradPhij*phiPx;
         const flt_t fyj = rAGradj*dy + rAGradThetaj*thetaPy + rAGradPhij*phiPy;
         const flt_t fzj = rAGradj*dz + rAGradThetaj*thetaPz;
-        rGradNlDx[jj*nb + bi] += fxj;
-        rGradNlDy[jj*nb + bi] += fyj;
-        rGradNlDz[jj*nb + bi] += fzj;
+        rGradNlDx[(size_t)jj*nb + bi] += fxj;
+        rGradNlDy[(size_t)jj*nb + bi] += fyj;
+        rGradNlDz[(size_t)jj*nb + bi] += fzj;
     }
 }
 template <int WTYPE, int MTYPE, int NMAX, int LMAX, int L3MAX, int L4MAX, int SIZE_NP>
@@ -253,7 +255,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     constexpr int tLMaxMax = LMAX>L3MAX ? (LMAX>L4MAX?LMAX:L4MAX) : (L3MAX>L4MAX?L3MAX:L4MAX);
     constexpr int tLMAll = (tLMaxMax+1)*(tLMaxMax+1);
     // init cache
-    flt_t *tAnlmBuf = *aForwardCache; *aForwardCache += (SIZE_NP*tLMAll)*nb;
+    flt_t *tAnlmBuf = *aForwardCache; *aForwardCache += (size_t)(SIZE_NP*tLMAll)*nb;
     flt_t bAnlm1[tLMAll], bAnlm2[tLMAll];
     flt_t bAGradAnlm1[tLMAll], bAGradAnlm2[tLMAll];
     // change loop order for less cache
@@ -264,8 +266,8 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     for (; np < (SIZE_NP-1); np += 2) {
         // read anlm from cache
         for (int k = 0; k < tLMAll; ++k) {
-            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm1)*nb + bi];
-            bAnlm2[k] = tAnlmBuf[(k+tShiftAnlm2)*nb + bi];
+            bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
+            bAnlm2[k] = tAnlmBuf[(size_t)(k+tShiftAnlm2)*nb + bi];
         }
         tShiftAnlm1 += (2*tLMAll);
         tShiftAnlm2 += (2*tLMAll);
@@ -292,7 +294,7 @@ static NNAP_DEVICE void sphBackwardGpu(int nb, int bi,
     if (SIZE_NP%2 == 1) {
         // read anlm from cache
         for (int k = 0; k < tLMAll; ++k) {
-            bAnlm1[k] = tAnlmBuf[(k+tShiftAnlm1)*nb + bi];
+            bAnlm1[k] = tAnlmBuf[(size_t)(k+tShiftAnlm1)*nb + bi];
         }
         fill<tLMAll>(bAGradAnlm1, ZERO);
         calGradSphL2<LMAX >(bAnlm1, bAGradAnlm1, aAGradFp+tShiftFp);
