@@ -13,6 +13,7 @@ import jse.gpu.*;
 import jse.jit.IJITEngine;
 import jse.jit.IJITMethod;
 import jse.jit.SimpleJIT;
+import jse.math.MathEX;
 import jse.math.vector.IntVector;
 import jse.math.vector.Vector;
 import org.jetbrains.annotations.ApiStatus;
@@ -107,7 +108,7 @@ public class NEP extends AbstractPairPotential {
     @Override public int ntypes() {return element_list.size();}
     @Override public boolean hasSymbol() {return true;}
     @Override public String symbol(int aType) {return element_list.get(aType-1);}
-    @Override public double rcutMax() {return Math.max(paramb.rc_radial, paramb.rc_angular);}
+    @Override public double rcutMax() {return paramb.rc_radial;}
     
     
     @Override
@@ -240,6 +241,9 @@ public class NEP extends AbstractPairPotential {
         mCudaGNlFx = mPtrMng.newFloatCudaPointer();
         mCudaGNlFy = mPtrMng.newFloatCudaPointer();
         mCudaGNlFz = mPtrMng.newFloatCudaPointer();
+        mCudaNlSizeR = mPtrMng.newIntCudaPointer();
+        mCudaNlSizeA = mPtrMng.newIntCudaPointer();
+        mCudaMgNlIdx = mPtrMng.newIntCudaPointer();
         
         mCudaNlGetter = new CudaNeighborListGetter(rcutMax());
         mCudaTypeMap = mPtrMng.newIntCudaPointer(aPair.mTypeNum+1);
@@ -259,12 +263,15 @@ public class NEP extends AbstractPairPotential {
         mPtrMng.ensureCapacity(mCudaEatom0, (long)nlocal);
         mPtrMng.ensureCapacity(mCudaVatom0, (long)nlocal*6L);
         mPtrMng.ensureCapacity(mCudaVatom1, (long)nlocalghost*9L);
+        mPtrMng.ensureCapacity(mCudaNlSizeR, (long)nlocal);
+        mPtrMng.ensureCapacity(mCudaNlSizeA, (long)nlocal);
         mPtrMng.ensureCapacity(cuda_Fp, (long)nlocal*annmb.dim);
         mPtrMng.ensureCapacity(cuda_sum_fxyz, (long)nlocal*(paramb.n_max_angular+1)*NUM_OF_ABC);
         // GPU 近邻列表构建
         mCudaNlGetter.build(aPair);
         // 近邻列表缓存向量长度规范
         final int tTotNlSize = nlocal*mCudaNlGetter.nlMax();
+        mPtrMng.ensureCapacity(mCudaMgNlIdx, tTotNlSize);
         mPtrMng.ensureCapacity(mCudaGNlFx, tTotNlSize);
         mPtrMng.ensureCapacity(mCudaGNlFy, tTotNlSize);
         mPtrMng.ensureCapacity(mCudaGNlFz, tTotNlSize);
@@ -278,7 +285,7 @@ public class NEP extends AbstractPairPotential {
         int tCode = mComputeLammpsCuda.invoke(
             nlocal, nghost, eflagEither?1:0, vflagEither?1:0, (vflagAtom||cvflagAtom)?1:0,
             mCudaNlGetter.posX(), mCudaNlGetter.posY(), mCudaNlGetter.posZ(), mCudaNlGetter.type(),
-            mCudaNlGetter.nlSize(), mCudaNlGetter.nlIdx(), mCudaTypeMap,
+            mCudaNlSizeR, mCudaNlSizeA, mCudaMgNlIdx, mCudaNlGetter.nlSize(), mCudaNlGetter.nlIdx(), mCudaTypeMap,
             paramb.cuda_atomic_numbers, paramb.cuda_q_scaler,
             annmb.cuda_w0, annmb.cuda_b0, annmb.cuda_w1, annmb.cuda_b1, annmb.cuda_c,
             zbl.cuda_para, cuda_gn_radial, cuda_gn_angular, cuda_gnp_radial, cuda_gnp_angular,
@@ -509,6 +516,7 @@ public class NEP extends AbstractPairPotential {
     private FloatCPointer mFltBuf = null;
     private FloatCudaPointer mCudaF = null, mCudaEatom0 = null, mCudaVatom0 = null, mCudaVatom1 = null;
     private FloatCudaPointer mCudaGNlFx = null, mCudaGNlFy = null, mCudaGNlFz = null;
+    private IntCudaPointer mCudaNlSizeR = null, mCudaNlSizeA = null, mCudaMgNlIdx = null;
     private IntCudaPointer mCudaTypeMap = null;
     private FloatCudaPointer cuda_Fp = null, cuda_sum_fxyz = null;
     private CudaNeighborListGetter mCudaNlGetter = null;
@@ -849,6 +857,10 @@ public class NEP extends AbstractPairPotential {
             }
             paramb.rc_radial = Double.parseDouble(tokens[1]);
             paramb.rc_angular = Double.parseDouble(tokens[2]);
+            // 这里比 nep 更加严格的检测输入参数
+            if (MathEX.Code.numericGreater(paramb.rc_angular, paramb.rc_radial)) {
+                throw new IllegalArgumentException(String.format("Input rc_angular(%.4g) must <= rc_radial(%.4g)", paramb.rc_angular, paramb.rc_radial));
+            }
             int MN_radial = Integer.parseInt(tokens[3]);  // not used
             int MN_angular = Integer.parseInt(tokens[4]); // not used
             if (tokens.length == 8) {

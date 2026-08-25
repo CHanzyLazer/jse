@@ -210,8 +210,7 @@ __jsefunc__ int jse_nep_computeLammps(
     JSE_NEP::flt_t *nl_fx, JSE_NEP::flt_t *nl_fy, JSE_NEP::flt_t *nl_fz,
     JSE_NEP::flt_t *fp, JSE_NEP::flt_t *sum_fxyz) {
     
-    constexpr JSE_NEP::flt_t rcut_max = __NEPGEN_RCUT_R__>__NEPGEN_RCUT_A__ ? __NEPGEN_RCUT_R__ : __NEPGEN_RCUT_A__;
-    constexpr JSE_NEP::flt_t cutsq = rcut_max*rcut_max;
+    constexpr JSE_NEP::flt_t cutsq = __NEPGEN_RCUT_R__*__NEPGEN_RCUT_R__;
     
     /// begin compute here
     for (int ii = 0; ii < inum; ++ii) {

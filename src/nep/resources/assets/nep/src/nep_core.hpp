@@ -1402,7 +1402,7 @@ static NEP_DEVICE void find_descriptor_gpu(const int nb, const int bi,
         flt_t rc_radial, flt_t rc_angular,
         const flt_t *q_scaler,
         const flt_t **ann_w0, const flt_t **ann_b0, const flt_t **ann_w1, const flt_t *ann_b1, const flt_t *ann_c,
-        const int nlsize, const int *nlidx,
+        const int nlsize_r, const int nlsize_a, const int *mg_nlidx,
         const flt_t *posx, const flt_t *posy, const flt_t *posz, const int *type,
         const flt_t *gn_radial, const flt_t *gn_angular,
         flt_t *g_Fp, flt_t *g_sum_fxyz,
@@ -1418,8 +1418,8 @@ static NEP_DEVICE void find_descriptor_gpu(const int nb, const int bi,
     const int t1 = type[bi];
     flt_t q[MAX_DIM] = {0.0};
     
-    for (int jj = 0; jj < nlsize; ++jj) {
-        const int j = nlidx[(size_t)jj*nb + bi];
+    for (int jj = 0; jj < nlsize_r; ++jj) {
+        const int j = mg_nlidx[(size_t)jj*nb + bi];
         flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
         flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
         if (d12sq >= rc_radial*rc_radial) {
@@ -1463,8 +1463,8 @@ static NEP_DEVICE void find_descriptor_gpu(const int nb, const int bi,
 
     for (int n = 0; n <= NMAX_A; ++n) {
         flt_t s[NUM_OF_ABC] = {0.0};
-        for (int jj = 0; jj < nlsize; ++jj) {
-            const int j = nlidx[(size_t)jj*nb + bi];
+        for (int jj = 0; jj < nlsize_a; ++jj) {
+            const int j = mg_nlidx[(size_t)jj*nb + bi];
             flt_t r12[3] = {posx[j] - x1, posy[j] - y1, posz[j] - z1};
             flt_t d12sq = r12[0]*r12[0] + r12[1]*r12[1] + r12[2]*r12[2];
             if (d12sq >= rc_angular*rc_angular) {
