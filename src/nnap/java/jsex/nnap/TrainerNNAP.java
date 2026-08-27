@@ -1983,10 +1983,11 @@ public class TrainerNNAP implements IHasSymbol, ISavable, AutoCloseable {
     protected void writeLoss() throws IOException {
         if (mLossOutPath == null) return;
         if (!mLossOutInit) {
-            IO.write(mLossOutPath, "epoch,loss-train,loss-test,lossE-train,lossE-test,lossF-train,lossF-test,lossS-train,lossS-test");
+            IO.write(mLossOutPath, "epoch,current_epoch,loss-train,loss-test,lossE-train,lossE-test,lossF-train,lossF-test,lossS-train,lossS-test");
             mLossOutInit = true;
         }
-        String tLine = (mEpoch+1) +
+        String tLine = mTrainLoss.size() +
+            "," + (mEpoch+1) +
             "," + mTrainLoss.last() +
             "," + mTestLoss.last() +
             "," + mTrainLossE.last() +
