@@ -5,7 +5,6 @@ import jse.code.IO;
 import jse.code.OS;
 import jse.code.UT;
 import jse.code.functional.IUnaryFullOperator;
-import jse.gpu.CudaJIT;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -381,6 +380,7 @@ public class JNIUtil {
             String tCmakeBuildCmd = CMake.EXE_CMD+" --build .";
             if (mParallel > 1) tCmakeBuildCmd += " --parallel "+mParallel;
             // 现在 windows 构建需要附加 dev 环境，专门写入 bat 脚本来执行
+            int tExtCode = 0;
             if (IS_WINDOWS) {
                 String tBuildBat = tWorkingDir + "build.bat";
                 // 注意使用 CRLF 换行以及编码问题
@@ -391,10 +391,11 @@ public class JNIUtil {
                     validWinCmd(tCmakeInitCmd)+"\r",
                     validWinCmd(tCmakeBuildCmd)+"\r"
                 );
-                EXEC.system("& \""+tBuildBat+"\"");
+                tExtCode = EXEC.system("& \""+tBuildBat+"\"");
             } else {
-                EXEC.system(tCmakeInitCmd);
-                EXEC.system(tCmakeBuildCmd);
+                tExtCode = EXEC.system(tCmakeInitCmd);
+                int tExtCode2 = EXEC.system(tCmakeBuildCmd);
+                if (tExtCode2!=0) tExtCode = tExtCode2;
             }
             EXEC.setNoSTDOutput(false).setWorkingDir(null);
             // 简单检测一下是否编译成功
@@ -410,6 +411,15 @@ public class JNIUtil {
                     System.err.println("  You can use `export JSE_DEBUG=1` to make the build output complete information");
                 }
                 throw new Exception("Build Failed");
+            } else
+            if (tExtCode != 0) {
+                System.err.println(IO.Text.red(mInfoProjectName+" INIT WARNING:")+" Exit code != 0, build maybe failed, build directory: "+tBuildDir);
+                if (IS_WINDOWS) {
+                    System.err.println("  You can use `$env:JSE_DEBUG = 1` (in powershell) to make the build output complete information");
+                } else {
+                    System.err.println("  You can use `export JSE_DEBUG=1` to make the build output complete information");
+                }
+                UT.Code.warning("Exit code = "+tExtCode);
             }
             mPostBuildDir.apply(tBuildDir);
             // 完事后移除临时解压得到的源码，这里需要对于神秘文件系统专门处理
