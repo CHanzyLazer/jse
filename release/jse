@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 # Get the directory where the script is located
 PRG="$0"
@@ -14,14 +14,19 @@ done
 SCRIPT_DIR="$(dirname "$PRG")"
 
 # Find jse.jar
+# In zsh an unmatched glob pattern is a fatal error (it does not pass
+# through literally as in sh/bash), so first probe for a match from a
+# subshell, which also captures the shell's own error message.
 JAR_LOCATION=""
+if ( ls "$SCRIPT_DIR"/jse-*.jar ) >/dev/null 2>&1; then
 for i in "$SCRIPT_DIR"/jse-*.jar; do
     if [ -e "$i" ]; then
     JAR_LOCATION="$i"
     break
     fi
 done
-if [ -z "$JAR_LOCATION" ]; then
+fi
+if [ -z "$JAR_LOCATION" ] && ( ls "$SCRIPT_DIR"/lib/jse-*.jar ) >/dev/null 2>&1; then
 for i in "$SCRIPT_DIR"/lib/jse-*.jar; do
     if [ -e "$i" ]; then
     JAR_LOCATION="$i"
@@ -55,4 +60,4 @@ if [ -n "$SLURM_NODELIST" ] || { [ -n "$JSE_HEADLESS" ] && [ "$JSE_HEADLESS" -ne
 fi
 
 # Execute jse.jar
-java $JAVA_OPTS -jar "$JAR_LOCATION" BASH "$@"
+exec java $JAVA_OPTS -jar "$JAR_LOCATION" BASH "$@"
